@@ -1,0 +1,73 @@
+/* Design Tokens & Theme Variables */
+:root {
+  /* Color Palette - Pure Solid Black Palette */
+  --bg-primary: #000000;
+  --bg-secondary: #0c0c0e;
+  --bg-tertiary: #161618;
+  --bg-card: #0d0d10;
+  --bg-card-hover: #17171c;
+  --bg-glass: #0d0d10;
+  --bg-glass-border: rgba(255, 255, 255, 0.1);
+  --bg-input: #08080a;
+
+  /* Accent Colors per Track */
+  --color-track-fundamentals: #06b6d4; /* Fundamentals & Glossary - Cyan / Turquoise */
+  --color-track-fundamentals-glow: rgba(6, 182, 212, 0.25);
+  --color-track-de: #00d2ff;        /* Data Engineering - Electric Cyan */
+  --color-track-de-glow: rgba(0, 210, 255, 0.25);
+  --color-track-ml-core: #10b981;   /* Core ML - Emerald Green */
+  --color-track-ml-core-glow: rgba(16, 185, 129, 0.25);
+  --color-track-models: #8b5cf6;    /* ML Models - Bright Violet */
+  --color-track-models-glow: rgba(139, 92, 246, 0.25);
+  --color-track-dl: #f59e0b;        /* Deep Learning - Solar Amber */
+  --color-track-dl-glow: rgba(245, 158, 11, 0.25);
+  --color-track-mlops: #ec4899;     /* MLOps - Neon Rose */
+  --color-track-mlops-glow: rgba(236, 72, 153, 0.25);
+
+  /* Primary Brand Accents (Solid Colors - No Gradients) */
+  --primary-color: #6366f1;
+  --primary-color-hover: #4f46e5;
+  --primary-gradient: #6366f1; /* Kept as solid color for backwards compatibility */
+  --accent-cyan: #06b6d4;
+  --accent-indigo: #6366f1;
+  --accent-purple: #8b5cf6;
+  --accent-pink: #ec4899;
+
+  /* Typography */
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+  /* Text Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0f172a;
+
+  /* Status Colors */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-danger: #ef4444;
+  --status-info: #3b82f6;
+
+  /* Shadows & Glows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
+  --glow-primary: 0 0 25px rgba(99, 102, 241, 0.3);
+
+  /* Border Radii */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}

@@ -1,0 +1,273 @@
+/* Widgets: Confusion Matrix Lab & Comparison Matrix */
+
+/* 1. Comparison Modal */
+.compare-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(5, 8, 16, 0.9);
+  backdrop-filter: blur(14px);
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+}
+
+.compare-modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.compare-container {
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 1100px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9);
+}
+
+.compare-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--bg-glass-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.compare-body {
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.compare-row-label {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+}
+
+.compare-cell {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--bg-glass-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.compare-model-card-header {
+  border-top: 4px solid var(--accent-indigo);
+}
+
+.compare-model-card-header.model-2 {
+  border-top: 4px solid var(--color-track-de);
+}
+
+/* 2. Interactive Confusion Matrix & Metrics Lab */
+.metrics-lab-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(5, 8, 16, 0.88);
+  backdrop-filter: blur(14px);
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+}
+
+.metrics-lab-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.metrics-lab-container {
+  background: var(--bg-secondary);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 1000px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 35px rgba(99, 102, 241, 0.15);
+}
+
+.metrics-lab-body {
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.matrix-playground-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 800px) {
+  .matrix-playground-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 2x2 Matrix UI */
+.confusion-matrix-box {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--bg-glass-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+.matrix-grid-2x2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.matrix-cell {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--bg-glass-border);
+}
+
+.matrix-cell.tp { border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05); }
+.matrix-cell.fp { border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05); }
+.matrix-cell.fn { border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.05); }
+.matrix-cell.tn { border-color: rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.05); }
+
+.matrix-cell-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.matrix-cell.tp .matrix-cell-title { color: #34d399; }
+.matrix-cell.fp .matrix-cell-title { color: #f87171; }
+.matrix-cell.fn .matrix-cell-title { color: #fbbf24; }
+.matrix-cell.tn .matrix-cell-title { color: #60a5fa; }
+
+.matrix-cell-desc {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.matrix-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.matrix-slider {
+  flex: 1;
+  accent-color: var(--accent-indigo);
+  cursor: pointer;
+}
+
+.matrix-num-input {
+  width: 60px;
+  background: #090d16;
+  border: 1px solid var(--bg-glass-border);
+  color: #fff;
+  border-radius: var(--radius-xs);
+  padding: 0.3rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+/* Computed Metrics Column */
+.computed-metrics-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.metric-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--bg-glass-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.metric-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #a5b4fc;
+}
+
+.metric-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.metric-bar-fill {
+  height: 100%;
+  background: var(--primary-color);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-fast);
+}
+
+.metric-formula {
+  font-family: var(--font-mono);
+  font-size: 0.725rem;
+  color: var(--text-muted);
+}

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive Machine Learning & Data Engineering Knowledge Hub. Deep dives into algorithms, architectures, hyperparameters, math intuition, and production code.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+  <title>ML & Data Engineering Hub | Interactive Concepts & Models Guide</title>
+
+  <!-- Typography: Outfit for headers, Inter for UI, JetBrains Mono for code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/modal.css">
+  <link rel="stylesheet" href="css/widgets.css">
+  <link rel="stylesheet" href="css/views.css">
+  <link rel="stylesheet" href="css/visualizers.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Hero Header -->
+    <header class="hero-header">
+      <div class="hero-badge-wrap">
+        <span class="hero-pill">
+          <span>⚡</span>
+          <span>Interactive Learning System & Reference Guide</span>
+        </span>
+      </div>
+
+      <h1 class="hero-title">
+        Machine Learning & <span class="text-solid">Data Engineering</span> Hub
+      </h1>
+
+      <p class="hero-subtitle">
+        Master algorithms, distributed pipelines, and production systems. Every concept broken down with real intuitions, hyperparameter tuning guides, mathematical formulations, and executable code.
+      </p>
+
+      <!-- Dynamic Statistics Bar -->
+      <div class="hero-stats" id="heroStats">
+        <!-- Rendered by app.js: total, one stat per track, parameters cataloged -->
+      </div>
+      <!-- Quick Action Buttons -->
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="openMetricsLabBtn">
+          <span>🎯</span>
+          <span>Open Confusion Matrix & Metrics Lab</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- View Switcher -->
+    <nav class="view-switcher" aria-label="Views">
+      <button class="view-btn active" data-view="cards">🗂️ Concept Cards</button>
+      <button class="view-btn" data-view="map">🗺️ Concept Map</button>
+      <button class="view-btn" data-view="wizard">🧭 Which Model?</button>
+      <button class="view-btn" data-view="pipelines">🔁 Pipelines</button>
+      <button class="view-btn" data-view="paths">🎓 Learning Paths</button>
+    </nav>
+
+    <!-- Main Interactive Controls (Search & Filters) -->
+    <section class="control-bar" id="cardsControls" aria-label="Filters and Search">
+      <!-- Search Input -->
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          id="searchInput" 
+          class="search-input" 
+          placeholder="Search definitions (What is ML? What is AI? What is Clustering?), models, hyperparameters, or math..."
+          autocomplete="off"
+        >
+        <button id="searchClearBtn" class="search-clear-btn" title="Clear search">×</button>
+        <div class="search-shortcut">⌘K / Ctrl+K</div>
+      </div>
+
+      <!-- Track Navigation Tabs -->
+      <nav class="track-tabs" aria-label="Tracks">
+        <button class="tab-btn active" data-track="all">
+          <span>🌐 All Tracks</span>
+          <span class="tab-count">0</span>
+        </button>
+        <button class="tab-btn" data-track="fundamentals">
+          <span>🌱 Core Definitions</span>
+          <span class="tab-count">0</span>
+        </button>
+        <button class="tab-btn" data-track="data-eng">
+          <span>📊 Data Engineering</span>
+          <span class="tab-count">0</span>
+        </button>
+        <button class="tab-btn" data-track="ml-core">
+          <span>🧠 Core ML Theory</span>
+          <span class="tab-count">0</span>
+        </button>
+        <button class="tab-btn" data-track="ml-models">
+          <span>🤖 ML Models</span>
+          <span class="tab-count">0</span>
+        </button>
+        <button class="tab-btn" data-track="deep-learning">
+          <span>⚡ Deep Learning</span>
+          <span class="tab-count">0</span>
+        </button>
+        <button class="tab-btn" data-track="mlops">
+          <span>🚀 MLOps & Production</span>
+          <span class="tab-count">0</span>
+        </button>
+      </nav>
+
+      <!-- Sub-Filters: Task Pills and Requirement Flags -->
+      <div class="sub-filters">
+        <div class="tag-pills">
+          <button class="tag-pill active" data-tag="all">All Topics</button>
+          <button class="tag-pill" data-tag="Definition">Definitions</button>
+          <button class="tag-pill" data-tag="Classification">Classification</button>
+          <button class="tag-pill" data-tag="Regression">Regression</button>
+          <button class="tag-pill" data-tag="Clustering">Clustering</button>
+          <button class="tag-pill" data-tag="Storage">Storage & Formats</button>
+          <button class="tag-pill" data-tag="Streaming">Streaming & Events</button>
+          <button class="tag-pill" data-tag="Preprocessing">Feature Prep</button>
+          <button class="tag-pill" data-tag="Architecture">Architecture</button>
+          <button class="tag-pill" data-tag="Evaluation">Evaluation</button>
+          <button class="tag-pill" data-tag="Optimization">Optimization</button>
+          <button class="tag-pill" data-tag="NLP">NLP</button>
+          <button class="tag-pill" data-tag="Computer Vision">Computer Vision</button>
+          <button class="tag-pill" data-tag="Deployment">Deployment</button>
+        </div>
+
+        <div class="filter-flags">
+          <label class="toggle-label" title="Show only algorithms that do NOT require feature scaling">
+            <input type="checkbox" id="toggleNoScaling" class="toggle-checkbox">
+            <span>🛡️ No Scaling Needed</span>
+          </label>
+          <label class="toggle-label" title="Show models with built-in missing value handling">
+            <input type="checkbox" id="toggleMissing" class="toggle-checkbox">
+            <span>⚡ Handles Missing Values</span>
+          </label>
+          <button class="btn btn-secondary" id="toggleExpandAllBtn" style="padding: 0.35rem 0.85rem; font-size: 0.775rem;">
+            <span id="expandAllIcon">⊞</span>
+            <span id="expandAllText">Expand All</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Concepts Grid -->
+    <main>
+      <div class="view-pane" id="view-cards">
+        <div class="cards-grid" id="conceptsGrid">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+      <!-- Alternate views, rendered on first visit by views.js -->
+      <div class="view-pane" id="view-map" hidden></div>
+      <div class="view-pane" id="view-wizard" hidden></div>
+      <div class="view-pane" id="view-pipelines" hidden></div>
+      <div class="view-pane" id="view-paths" hidden></div>
+    </main>
+  </div>
+
+  <!-- =========================================================================
+       Floating Comparison Dock
+       ========================================================================= -->
+  <aside class="comparison-dock" id="comparisonDock" aria-label="Comparison Dock">
+    <div class="dock-items">
+      <div class="dock-slot dock-slot-empty" id="compareSlot1">
+        <span>Slot 1: Select model</span>
+      </div>
+      <span style="color: var(--text-muted); font-size: 0.8rem; font-weight: bold;">VS</span>
+      <div class="dock-slot dock-slot-empty" id="compareSlot2">
+        <span>Slot 2: Select model</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="btn btn-primary" id="launchCompareBtn" style="padding: 0.45rem 1rem; font-size: 0.85rem;" disabled>
+        Compare Side-by-Side
+      </button>
+      <button class="btn btn-secondary" id="clearCompareBtn" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;" title="Clear selections">
+        Clear
+      </button>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       Deep Dive Concept Detail Modal
+       ========================================================================= -->
+  <div class="modal-backdrop" id="conceptModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-container">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <div class="modal-category-track">
+            <span class="badge" id="modalTrackBadge">Track</span>
+            <span id="modalCategory" style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Category</span>
+          </div>
+          <h2 class="modal-title" id="modalTitle">Concept Title</h2>
+        </div>
+        <div class="modal-header-actions">
+          <button class="learned-btn" id="modalLearnedBtn" aria-pressed="false">Mark as learned</button>
+          <button class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">×</button>
+        </div>
+      </div>
+
+      <!-- Modal Tabs Navigation -->
+      <div class="modal-nav-tabs" role="tablist">
+        <button class="modal-tab-btn active" data-tab="overview" role="tab">
+          <span>📖</span>
+          <span>Intuition & Overview</span>
+        </button>
+        <button class="modal-tab-btn" data-tab="links" role="tab">
+          <span>🗺️</span>
+          <span>Diagram & Links</span>
+        </button>
+        <button class="modal-tab-btn" data-tab="interactive" role="tab" hidden>
+          <span>🎮</span>
+          <span>Interactive</span>
+        </button>
+        <button class="modal-tab-btn" data-tab="parameters" role="tab">
+          <span>⚙️</span>
+          <span>Hyperparameters</span>
+        </button>
+        <button class="modal-tab-btn" data-tab="math" role="tab">
+          <span>📐</span>
+          <span>Math & Loss</span>
+        </button>
+        <button class="modal-tab-btn" data-tab="pros-cons" role="tab">
+          <span>⚖️</span>
+          <span>Pros, Cons & Gotchas</span>
+        </button>
+        <button class="modal-tab-btn" data-tab="code" role="tab">
+          <span>💻</span>
+          <span>Code Blueprint</span>
+        </button>
+      </div>
+
+      <!-- Modal Body (Panes) -->
+      <div class="modal-body">
+        <div class="modal-pane active" id="tab-overview" role="tabpanel"></div>
+        <div class="modal-pane" id="tab-links" role="tabpanel"></div>
+        <div class="modal-pane" id="tab-interactive" role="tabpanel"></div>
+        <div class="modal-pane" id="tab-parameters" role="tabpanel"></div>
+        <div class="modal-pane" id="tab-math" role="tabpanel"></div>
+        <div class="modal-pane" id="tab-pros-cons" role="tabpanel"></div>
+        <div class="modal-pane" id="tab-code" role="tabpanel"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Interactive Confusion Matrix & Metrics Lab Modal
+       ========================================================================= -->
+  <div class="metrics-lab-modal" id="metricsLabModal" role="dialog" aria-modal="true" aria-labelledby="labTitle">
+    <div class="metrics-lab-container">
+      <div class="modal-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;">
+            <span class="badge badge-ml-core">Interactive Lab</span>
+            <span id="matrixTotalCount" style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono);">Total Samples: 500</span>
+          </div>
+          <h2 class="modal-title" id="labTitle">Confusion Matrix & Metrics Simulator</h2>
+        </div>
+        <button class="modal-close-btn" id="closeLabBtn" aria-label="Close lab">×</button>
+      </div>
+
+      <div class="metrics-lab-body">
+        <!-- Preset Scenario Buttons -->
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Quick Scenarios:</span>
+          <button class="btn btn-secondary" id="presetMedical" style="padding: 0.35rem 0.75rem; font-size: 0.775rem;">
+            🏥 Medical Screening (High Recall Critical)
+          </button>
+          <button class="btn btn-secondary" id="presetSpam" style="padding: 0.35rem 0.75rem; font-size: 0.775rem;">
+            🛡️ Email Spam (High Precision Critical)
+          </button>
+          <button class="btn btn-secondary" id="presetBalanced" style="padding: 0.35rem 0.75rem; font-size: 0.775rem;">
+            ⚖️ Balanced Dataset
+          </button>
+        </div>
+
+        <div class="matrix-playground-grid">
+          <!-- 2x2 Interactive Inputs -->
+          <div class="confusion-matrix-box">
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: #fff;">1. Adjust Confusion Matrix Quadrants</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Slide or type values to see how predictions vs actual reality shape every evaluation metric.
+            </p>
+
+            <div class="matrix-grid-2x2">
+              <!-- True Positive -->
+              <div class="matrix-cell tp">
+                <span class="matrix-cell-title">True Positive (TP)</span>
+                <span class="matrix-cell-desc">Actual Positive, Predicted Positive</span>
+                <div class="matrix-input-row">
+                  <input type="range" id="tpSlider" class="matrix-slider" min="0" max="1000" value="100">
+                  <input type="number" id="tpInput" class="matrix-num-input" min="0" max="50000" value="100">
+                </div>
+              </div>
+
+              <!-- False Positive -->
+              <div class="matrix-cell fp">
+                <span class="matrix-cell-title">False Positive (FP)</span>
+                <span class="matrix-cell-desc">Type I Error: False Alarm</span>
+                <div class="matrix-input-row">
+                  <input type="range" id="fpSlider" class="matrix-slider" min="0" max="1000" value="20">
+                  <input type="number" id="fpInput" class="matrix-num-input" min="0" max="50000" value="20">
+                </div>
+              </div>
+
+              <!-- False Negative -->
+              <div class="matrix-cell fn">
+                <span class="matrix-cell-title">False Negative (FN)</span>
+                <span class="matrix-cell-desc">Type II Error: Missed Hazard</span>
+                <div class="matrix-input-row">
+                  <input type="range" id="fnSlider" class="matrix-slider" min="0" max="1000" value="15">
+                  <input type="number" id="fnInput" class="matrix-num-input" min="0" max="50000" value="15">
+                </div>
+              </div>
+
+              <!-- True Negative -->
+              <div class="matrix-cell tn">
+                <span class="matrix-cell-title">True Negative (TN)</span>
+                <span class="matrix-cell-desc">Actual Negative, Predicted Negative</span>
+                <div class="matrix-input-row">
+                  <input type="range" id="tnSlider" class="matrix-slider" min="0" max="1000" value="365">
+                  <input type="number" id="tnInput" class="matrix-num-input" min="0" max="50000" value="365">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Output Metrics -->
+          <div class="computed-metrics-box">
+            <!-- Accuracy -->
+            <div class="metric-card">
+              <div class="metric-card-top">
+                <span class="metric-name">Accuracy</span>
+                <span class="metric-value" id="accuracyVal">0%</span>
+              </div>
+              <div class="metric-bar-bg"><div class="metric-bar-fill" id="accuracyBar"></div></div>
+              <div class="metric-formula">Formula: (TP + TN) / Total</div>
+            </div>
+
+            <!-- Precision -->
+            <div class="metric-card">
+              <div class="metric-card-top">
+                <span class="metric-name">Precision (Exactness)</span>
+                <span class="metric-value text-de" id="precisionVal">0%</span>
+              </div>
+              <div class="metric-bar-bg"><div class="metric-bar-fill" id="precisionBar" style="background: var(--color-track-de);"></div></div>
+              <div class="metric-formula">Formula: TP / (TP + FP) — "When it predicts positive, how often is it right?"</div>
+            </div>
+
+            <!-- Recall -->
+            <div class="metric-card">
+              <div class="metric-card-top">
+                <span class="metric-name">Recall / Sensitivity (Completeness)</span>
+                <span class="metric-value text-ml-core" id="recallVal">0%</span>
+              </div>
+              <div class="metric-bar-bg"><div class="metric-bar-fill" id="recallBar" style="background: var(--color-track-ml-core);"></div></div>
+              <div class="metric-formula">Formula: TP / (TP + FN) — "Out of all actual positives, how many did we catch?"</div>
+            </div>
+
+            <!-- F1 Score -->
+            <div class="metric-card">
+              <div class="metric-card-top">
+                <span class="metric-name">F1-Score</span>
+                <span class="metric-value text-models" id="f1Val">0%</span>
+              </div>
+              <div class="metric-bar-bg"><div class="metric-bar-fill" id="f1Bar" style="background: var(--color-track-models);"></div></div>
+              <div class="metric-formula">Harmonic Mean: 2 · (Precision · Recall) / (Precision + Recall)</div>
+            </div>
+
+            <!-- Specificity -->
+            <div class="metric-card">
+              <div class="metric-card-top">
+                <span class="metric-name">Specificity (True Negative Rate)</span>
+                <span class="metric-value" id="specificityVal" style="color: #60a5fa;">0%</span>
+              </div>
+              <div class="metric-bar-bg"><div class="metric-bar-fill" id="specificityBar" style="background: #3b82f6;"></div></div>
+              <div class="metric-formula">Formula: TN / (TN + FP)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Side-by-Side Model Comparison Modal
+       ========================================================================= -->
+  <div class="compare-modal-backdrop" id="compareModal" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
+    <div class="compare-container">
+      <div class="compare-header">
+        <h2 class="modal-title" id="compareTitle">Side-by-Side Model Comparison Matrix</h2>
+        <button class="modal-close-btn" id="closeCompareBtn" aria-label="Close comparison">×</button>
+      </div>
+      <div class="compare-body" id="compareModalBody">
+        <!-- Rendered dynamically by widgets.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- App Logic Entry -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

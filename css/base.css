@@ -1,0 +1,174 @@
+/* Base Styles, Reset, & Global Layout */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: #000000;
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle Minimalist Dark Grid Pattern */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Typography Defaults */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: #fff;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Layout Containers */
+.app-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 1.5rem 6rem;
+}
+
+/* Utility Classes */
+.text-gradient, .text-solid {
+  color: var(--primary-color);
+}
+
+.text-fundamentals {
+  color: var(--color-track-fundamentals);
+}
+
+.text-de {
+  color: var(--color-track-de);
+}
+
+.text-ml-core {
+  color: var(--color-track-ml-core);
+}
+
+.text-models {
+  color: var(--color-track-models);
+}
+
+.text-dl {
+  color: var(--color-track-dl);
+}
+
+.text-mlops {
+  color: var(--color-track-mlops);
+}
+
+/* Tooltip & Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+}
+
+.badge-fundamentals {
+  background: rgba(6, 182, 212, 0.12);
+  color: var(--color-track-fundamentals);
+  border-color: rgba(6, 182, 212, 0.25);
+}
+
+.badge-de,
+.badge-data-eng {
+  background: rgba(0, 210, 255, 0.12);
+  color: var(--color-track-de);
+  border-color: rgba(0, 210, 255, 0.25);
+}
+
+.badge-ml-core {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--color-track-ml-core);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.badge-models,
+.badge-ml-models {
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--color-track-models);
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.badge-dl,
+.badge-deep-learning {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--color-track-dl);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.badge-mlops {
+  background: rgba(236, 72, 153, 0.12);
+  color: var(--color-track-mlops);
+  border-color: rgba(236, 72, 153, 0.25);
+}
