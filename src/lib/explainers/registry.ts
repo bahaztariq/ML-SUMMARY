@@ -6,7 +6,8 @@ import type { ExplainerModule } from './types';
 
 const explainers: Record<string, () => Promise<ExplainerModule>> = {
 	kmeans: () => import('./kmeans/index.ts').then((m) => m.default),
-	'decision-tree': () => import('./decision-tree/index.ts').then((m) => m.default)
+	'decision-tree': () => import('./decision-tree/index.ts').then((m) => m.default),
+	'what-is-gradient-descent': () => import('./gradient-descent/index.ts').then((m) => m.default)
 };
 
 /** Concepts with a guided lesson, in the order they are featured. */
