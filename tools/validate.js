@@ -9,6 +9,8 @@ import { concepts, conceptById } from '../content/index.js';
 import { tracks } from '../content/tracks.js';
 import { learningPaths } from '../content/paths.js';
 import { decisionTree, decisionTreeStart } from '../content/decision-tree.js';
+import { pipelines } from '../content/pipelines.js';
+import { taxonomyConceptIds } from '../content/taxonomy.js';
 
 const errors = [];
 const warnings = [];
@@ -64,6 +66,15 @@ for (const c of concepts) visit(c.id, []);
 // Learning paths reference real concepts
 for (const p of learningPaths) {
   for (const step of p.steps) if (!conceptById.has(step)) errors.push(`path "${p.id}" -> unknown id "${step}"`);
+}
+
+// Map: taxonomy and pipeline diagrams link to real concepts (and pipeline links name real Mermaid nodes)
+for (const id of taxonomyConceptIds()) if (!conceptById.has(id)) errors.push(`taxonomy -> unknown concept id "${id}"`);
+for (const p of pipelines) {
+  for (const [node, id] of Object.entries(p.links)) {
+    if (!conceptById.has(id)) errors.push(`pipeline "${p.id}" node ${node} -> unknown concept id "${id}"`);
+    if (!new RegExp(`\\b${node}\\s*[[({]`).test(p.source)) errors.push(`pipeline "${p.id}" links unknown node "${node}"`);
+  }
 }
 
 // "Which model?" decision tree: links resolve, results name real concepts, every node is reachable, no loops
