@@ -4,7 +4,9 @@
  */
 import type { ExplainerModule } from './types';
 
-const explainers: Record<string, () => Promise<ExplainerModule>> = {};
+const explainers: Record<string, () => Promise<ExplainerModule>> = {
+	kmeans: () => import('./kmeans/index.ts').then((m) => m.default)
+};
 
 /** Concepts with a guided lesson, in the order they are featured. */
 export const explainerIds = Object.keys(explainers);
