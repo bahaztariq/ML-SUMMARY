@@ -8,6 +8,7 @@ import { readdirSync } from 'node:fs';
 import { concepts, conceptById } from '../content/index.js';
 import { tracks } from '../content/tracks.js';
 import { learningPaths } from '../content/paths.js';
+import { decisionTree, decisionTreeStart } from '../content/decision-tree.js';
 
 const errors = [];
 const warnings = [];
@@ -65,7 +66,29 @@ for (const p of learningPaths) {
   for (const step of p.steps) if (!conceptById.has(step)) errors.push(`path "${p.id}" -> unknown id "${step}"`);
 }
 
+// "Which model?" decision tree: links resolve, results name real concepts, every node is reachable, no loops
+if (!decisionTree[decisionTreeStart]) errors.push(`decision tree: missing start node "${decisionTreeStart}"`);
+for (const [key, node] of Object.entries(decisionTree)) {
+  if (node.q) {
+    if (!node.options?.length) errors.push(`decision tree "${key}": question has no options`);
+    for (const o of node.options ?? []) if (!decisionTree[o.next]) errors.push(`decision tree "${key}" -> unknown node "${o.next}"`);
+  } else if (node.result) {
+    if (!node.result.length) errors.push(`decision tree "${key}": empty result`);
+    for (const id of node.result) if (!conceptById.has(id)) errors.push(`decision tree "${key}" -> unknown concept id "${id}"`);
+  } else errors.push(`decision tree "${key}": neither a question nor a result`);
+}
+{
+  const reached = new Set();
+  const walk = (key, stack) => {
+    if (stack.includes(key)) { errors.push(`decision tree loop: ${[...stack, key].join(' -> ')}`); return; }
+    reached.add(key);
+    for (const o of decisionTree[key]?.options ?? []) if (decisionTree[o.next]) walk(o.next, [...stack, key]);
+  };
+  if (decisionTree[decisionTreeStart]) walk(decisionTreeStart, []);
+  for (const key of Object.keys(decisionTree)) if (!reached.has(key)) warnings.push(`decision tree node "${key}" is unreachable`);
+}
+
 for (const w of warnings) console.warn(`warn  ${w}`);
 for (const e of errors) console.error(`error ${e}`);
-console.log(`\n${concepts.length} concepts, ${learningPaths.length} paths: ${errors.length} errors, ${warnings.length} warnings`);
+console.log(`\n${concepts.length} concepts, ${learningPaths.length} paths, ${Object.keys(decisionTree).length} decision-tree nodes: ${errors.length} errors, ${warnings.length} warnings`);
 process.exit(errors.length ? 1 : 0);
