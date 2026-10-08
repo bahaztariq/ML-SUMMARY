@@ -1,46 +1,25 @@
-# 🚀 ML & Data Engineering Interactive Knowledge Hub
+# ML Hub: an interactive machine learning knowledge hub
 
-An interactive single-page knowledge platform and cheat sheet covering **96 concepts** across **Machine Learning**, **Deep Learning**, **Data Engineering** and **MLOps**. Every concept includes an intuition, a diagram, hyperparameters, math, pros & cons, and code. Concepts are linked to each other as a prerequisite graph.
+A learning app covering **96 concepts** across **Machine Learning**, **Deep Learning**, **Data Engineering** and **MLOps**. Every concept has an intuition, a diagram, the math, hyperparameters, pros & cons and code, and concepts are linked as a prerequisite graph. Key concepts come with **guided interactive lessons**: narration on one side and a live visualization you drag, tweak and make predictions about on the other.
 
-Built with **HTML5, vanilla CSS and JavaScript (ES Modules)**. There is no build step. [Mermaid](https://mermaid.js.org/) is loaded from a CDN to draw the diagrams.
-
----
-
-## 🌟 Features
-
-### Five ways to explore
-
-| View | What it shows |
-|---|---|
-| 🗂️ **Concept Cards** | Searchable, filterable grid. Filter by track, by tag (Classification, Streaming, NLP, Deployment…) and by model requirements (no scaling needed, handles missing values). |
-| 🗺️ **Concept Map** | An ML taxonomy graph (AI → ML → Supervised → Classification → models…), a **prerequisite graph** for each track, and a collapsible **knowledge tree** of every concept. |
-| 🧭 **Which Model?** | An interactive decision tree. Answer 2–4 questions and get recommended concepts. You can also view the whole tree as one diagram. |
-| 🔁 **Pipelines** | Clickable flow diagrams: the ML lifecycle, a modern data platform, preprocessing without leakage, and the neural-network training loop. |
-| 🎓 **Learning Paths** | Six ordered curricula (ML Beginner, Tabular ML, Unsupervised, Deep Learning & LLMs, Data Engineer, MLOps Engineer). Progress is saved in your browser. |
-
-Every box in a diagram that is linked to a concept opens that concept when clicked.
-
-### Every concept's deep-dive
-
-- 📖 **Intuition & Overview**: an everyday analogy, the goal, when to use it and when to avoid it, and data requirements
-- 🗺️ **Diagram & Links**: a diagram of how the concept works, an auto-generated **learning chain** (prerequisites → concept → what it unlocks), and *Learn first / Related / Unlocks* links
-- 🎮 **Interactive**: live visualizers for selected concepts (gradient descent, bias-variance, k-means, k-NN, ROC/PR, activation functions, PCA…)
-- ⚙️ **Hyperparameters**: name, type, default, impact and a tuning tip
-- 📐 **Math & Loss**: the equation, explained
-- ⚖️ **Pros, Cons & Gotchas**
-- 💻 **Code Blueprint**: Python, SQL, YAML or a Dockerfile, ready to copy
-
-Use **Mark as learned** to tick off concepts. Learned concepts get a ✓ on cards, in the tree, in the graphs and in the learning paths.
-
-### Tools
-
-- 🎯 **Confusion Matrix & Metrics Lab**: sliders for TP/FP/FN/TN with live Accuracy, Precision, Recall, Specificity and F1, plus scenario presets
-- 🔄 **Side-by-side comparison**: pick any 2 concepts to compare them
-- 🔍 **Search (`⌘K` / `Ctrl+K`)**: searches titles, categories, summaries, intuitions, tags and hyperparameter names
+Built with **SvelteKit 3 (Svelte 5)** and TypeScript, prerendered to a static site.
 
 ---
 
-## 📚 Coverage
+## Features
+
+- **Interactive lessons**: step-by-step explainers with tasks ("drag a centroid…"), predict-then-reveal quizzes and live numbers in the narration.
+- **Concept pages**: one page per concept with the lesson (or playground) first, then intuition, when to use it, how it works, math, hyperparameters, trade-offs, code and where it fits in the prerequisite graph.
+- **Learning paths**: six ordered curricula with progress tracking. Concept pages show your position in the path with previous/next links.
+- **Learn**: browse every concept by track, difficulty and interactivity.
+- **Map**: the concept taxonomy, prerequisite graphs, a knowledge tree and pipeline diagrams.
+- **Tools**: the "Which model?" wizard, a confusion-matrix metrics lab and side-by-side concept comparison.
+- **Search**: press `⌘K` / `Ctrl+K` (or `/`) anywhere.
+- Light and dark themes. Progress is saved in your browser.
+
+---
+
+## Coverage
 
 | Track | Concepts |
 |---|---|
@@ -53,61 +32,54 @@ Use **Mark as learned** to tick off concepts. Learned concepts get a ✓ on card
 
 ---
 
-## 🏃 How to Run Locally
-
-The project uses ES Modules, so serve it over HTTP instead of opening the file directly:
+## Running locally
 
 ```bash
-python3 -m http.server 4173
-# or
-npx serve .
+npm install
+npm run dev          # http://localhost:5173
+npm run build        # static site in build/
+npm run preview      # serve the production build
+npm test             # unit tests (explainer math, tools)
+npm run check        # type-check
+npm run validate     # content checks
 ```
 
-Then open [http://localhost:4173](http://localhost:4173). Diagrams need an internet connection the first time, because Mermaid loads from jsDelivr.
+The original vanilla-JS app is kept in `legacy/` for reference while its last features are ported. Run `npm run legacy` and open http://localhost:4173/legacy/.
 
 ---
 
-## 📁 Project Structure
+## Project structure
 
 ```
 ML-SUMMARY/
-├── index.html              # Page shell, view switcher, modals
-├── css/
-│   ├── variables.css       # Colors, track accents, radii
-│   ├── base.css            # Background, typography, badges
-│   ├── components.css      # Hero, search, tabs, concept cards
-│   ├── modal.css           # Deep-dive modal
-│   ├── widgets.css         # Metrics lab, comparison matrix
-│   ├── views.css           # Map, wizard, pipelines, paths, diagrams
-│   └── visualizers.css     # Interactive visualizers
-├── js/
-│   ├── data.js             # Base concepts + merge of js/data/* (exports concepts, conceptById, getDependents)
-│   ├── data/               # Additional concepts & enrichments per track
-│   │   ├── mlops-fundamentals.js
-│   │   ├── data-eng.js
-│   │   ├── ml-core.js
-│   │   ├── ml-models.js
-│   │   └── deep-learning.js
-│   ├── tracks.js           # Track ids, labels, icons, colors
-│   ├── paths.js            # Learning path definitions
-│   ├── progress.js         # "Learned" state (localStorage)
-│   ├── diagrams.js         # Lazy Mermaid loader + clickable nodes
-│   ├── views.js            # Concept Map, Which Model?, Pipelines, Learning Paths
-│   ├── visualizers.js      # Interactive canvas visualizers
-│   ├── app.js              # State, search, filters, card grid
-│   ├── modal.js            # Deep-dive modal, links tab, learning chain
-│   └── widgets.js          # Metrics lab & comparison
-└── README.md
+├── content/                    # All learning content, plain JS data (no UI code)
+│   ├── index.js                # Concept registry: imports every concept
+│   ├── tracks.js · paths.js    # Tracks and learning paths
+│   └── <track>/<id>.js         # One file per concept
+├── src/
+│   ├── app.css                 # Design tokens (light/dark) and shared primitives
+│   ├── routes/                 # Pages: / · /learn · /concept/[id] · /paths · /map · /tools
+│   └── lib/
+│       ├── content.ts          # Typed access to content/ plus graph helpers
+│       ├── progress.svelte.ts  # Learned/recent state (localStorage)
+│       ├── components/         # Nav, ⌘K palette, cards, Mermaid diagram, code block
+│       ├── explainers/         # Guided lessons
+│       │   ├── Player.svelte   # Generic step player (narration, tasks, quizzes)
+│       │   ├── registry.ts     # Which concepts have a lesson / playground
+│       │   └── kmeans/ …       # One folder per lesson
+│       └── viz/                # Canvas toolkit, controls, legacy playgrounds
+├── tools/validate.js           # Content checks: ids, links, cycles, paths
+└── legacy/                     # Original app (to be removed)
 ```
 
 ---
 
-## ➕ Adding a Concept
+## Adding a concept
 
-Add an object to `newConcepts` in the matching `js/data/<track>.js` file:
+Create `content/<track>/<id>.js` with a default export, then import it in `content/index.js`:
 
 ```javascript
-{
+export default {
   id: "lightgbm",                       // unique kebab-case id
   name: "LightGBM",
   track: "ml-models",                   // fundamentals | data-eng | ml-core | ml-models | deep-learning | mlops
@@ -132,6 +104,23 @@ Add an object to `newConcepts` in the matching `js/data/<track>.js` file:
 }
 ```
 
-To give an existing concept links or a diagram without editing it, add an entry to that file's `enrichments` object, keyed by the concept's id.
+Run `npm run validate` to check for duplicate ids, broken prerequisite/related links, prerequisite cycles and unknown ids in learning paths.
 
-Cards, counts, search, the knowledge tree, prerequisite graphs and learning chains all update automatically. To add the concept to a learning path, list its id in `js/paths.js`. To add it to the decision tree, list its id in the `decisionTree` object in `js/views.js`.
+Cards, search, learning chains and graphs update automatically. To add the concept to a learning path, list its id in `content/paths.js`.
+
+---
+
+## Adding an interactive lesson
+
+Each lesson is a folder in `src/lib/explainers/`, following `kmeans/`:
+
+| File | Role |
+|---|---|
+| `kmeans.ts` + `kmeans.spec.ts` | Pure algorithm, unit-tested |
+| `state.ts` | Lesson state and the actions both steps and scene controls call |
+| `Scene.svelte` | The live visualization (canvas + controls) bound to the state |
+| `index.ts` | The steps |
+
+A step has a `title`, a `body` (narration, a string or `(state) => string` for live values; supports `**bold**`, `` `code` ``, lists and `[label](concept:id)` links), an `enter(state)` that sets the scene up, and optionally a `task` (an interactive goal) or a `quiz` whose `reveal` changes the scene after the learner answers. Moving to step *i* replays `init()` and every `enter()` up to *i*, so each step looks the same however you reach it. Use seeded randomness (`mulberry32`) to keep it deterministic.
+
+Register the lesson in `src/lib/explainers/registry.ts` under the concept's id.
