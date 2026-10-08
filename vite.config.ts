@@ -1,9 +1,11 @@
 import { defineConfig } from 'vitest/config';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { conceptIndex } from './tools/concept-index-plugin.ts';
 
 export default defineConfig({
 	plugins: [
+		conceptIndex(),
 		sveltekit({
 			compilerOptions: {
 				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
