@@ -4,6 +4,7 @@
 	import Segmented from '#lib/viz/controls/Segmented.svelte';
 	import Readouts from '#lib/viz/controls/Readouts.svelte';
 	import { alpha, clamp, dot, label, mapper, squareMapper, ticks, type VizTheme } from '#lib/viz/canvas.ts';
+	import { local } from '#lib/i18n/index.svelte.ts';
 	import type { SceneProps } from '../types';
 	import TreeDiagram from './TreeDiagram.svelte';
 	import * as dt from './tree';
@@ -30,6 +31,129 @@
 	} from './state';
 
 	let { s = $bindable(), step }: SceneProps<TreeState> = $props();
+
+	const L = local({
+		en: {
+			yes: 'yes',
+			no: 'no',
+			hintX: '← drag to move the split →',
+			hintY: '↕ drag to move the split',
+			threshold: 'threshold t',
+			childGini: 'weighted child Gini',
+			parent: 'parent',
+			best: 'best',
+			accVsDepth: 'accuracy vs max_depth',
+			train: 'train',
+			test: 'test',
+			root: 'root',
+			rootGini: 'root Gini',
+			gain: 'gain',
+			depth: 'depth',
+			leaves: 'leaves',
+			trainAcc: 'train acc',
+			testAcc: 'test acc',
+			scatterLabel: "Scatter plot of two classes with the tree's split lines and rectangular decision regions",
+			classA: 'class A',
+			classB: 'class B',
+			misclassified: 'misclassified',
+			showingTest: 'showing the {n} held-out test points',
+			curveLabel: 'Weighted child impurity for every threshold on the current feature',
+			depthLabel: 'Train and test accuracy for each max_depth',
+			splitOn: 'Split on',
+			vertical: 'x₁ (vertical line)',
+			horizontal: 'x₂ (horizontal line)',
+			grow: '+ Grow one level',
+			prune: '− Prune a level',
+			none: 'none',
+			showPoints: 'Show points',
+			trainOpt: 'Train',
+			testOpt: 'Test',
+			labels: 'Labels',
+			noisy: '10% noisy',
+			clean: 'Clean',
+			resample: '↻ New training sample'
+		},
+		fr: {
+			yes: 'oui',
+			no: 'non',
+			hintX: '← glissez pour déplacer la coupure →',
+			hintY: '↕ glissez pour déplacer la coupure',
+			threshold: 'seuil t',
+			childGini: 'Gini pondéré des enfants',
+			parent: 'parent',
+			best: 'meilleure',
+			accVsDepth: 'exactitude selon max_depth',
+			train: 'entraîn.',
+			test: 'test',
+			root: 'racine',
+			rootGini: 'Gini racine',
+			gain: 'gain',
+			depth: 'profondeur',
+			leaves: 'feuilles',
+			trainAcc: 'exact. entraîn.',
+			testAcc: 'exact. test',
+			scatterLabel: "Nuage de points de deux classes avec les lignes de coupure de l'arbre et ses régions de décision rectangulaires",
+			classA: 'classe A',
+			classB: 'classe B',
+			misclassified: 'mal classé',
+			showingTest: 'affichage des {n} points de test mis de côté',
+			curveLabel: 'Impureté pondérée des enfants pour chaque seuil sur la variable actuelle',
+			depthLabel: "Exactitude d'entraînement et de test pour chaque max_depth",
+			splitOn: 'Couper sur',
+			vertical: 'x₁ (ligne verticale)',
+			horizontal: 'x₂ (ligne horizontale)',
+			grow: '+ Ajouter un niveau',
+			prune: '− Élaguer un niveau',
+			none: 'aucune',
+			showPoints: 'Points affichés',
+			trainOpt: 'Entraînement',
+			testOpt: 'Test',
+			labels: 'Étiquettes',
+			noisy: '10 % bruitées',
+			clean: 'Propres',
+			resample: '↻ Nouvel échantillon'
+		},
+		ar: {
+			yes: 'نعم',
+			no: 'لا',
+			hintX: '← اسحب لتحريك التقسيم →',
+			hintY: '↕ اسحب لتحريك التقسيم',
+			threshold: 'العتبة t',
+			childGini: 'جيني المرجّح للابنين',
+			parent: 'الأب',
+			best: 'الأفضل',
+			accVsDepth: 'الدقة مقابل max_depth',
+			train: 'تدريب',
+			test: 'اختبار',
+			root: 'الجذر',
+			rootGini: 'جيني الجذر',
+			gain: 'الكسب',
+			depth: 'العمق',
+			leaves: 'الأوراق',
+			trainAcc: 'دقة التدريب',
+			testAcc: 'دقة الاختبار',
+			scatterLabel: 'مخطط انتشار لفئتين مع خطوط تقسيم الشجرة ومناطق القرار المستطيلة',
+			classA: 'الفئة A',
+			classB: 'الفئة B',
+			misclassified: 'مصنّفة خطأً',
+			showingTest: 'عرض نقاط الاختبار المحجوزة ({n})',
+			curveLabel: 'شوائب الابنين المرجّحة لكل عتبة على الميزة الحالية',
+			depthLabel: 'دقة التدريب والاختبار لكل قيمة max_depth',
+			splitOn: 'التقسيم على',
+			vertical: 'x₁ (خط عمودي)',
+			horizontal: 'x₂ (خط أفقي)',
+			grow: '+ أضف مستوى',
+			prune: '− احذف مستوى',
+			none: 'بلا حدّ',
+			showPoints: 'عرض النقاط',
+			trainOpt: 'تدريب',
+			testOpt: 'اختبار',
+			labels: 'التسميات',
+			noisy: '10% مشوّشة',
+			clean: 'نظيفة',
+			resample: '↻ عيّنة تدريب جديدة'
+		}
+	});
 
 	const DOMAIN: [number, number] = [-1.05, 1.05];
 	const PAD = 10;
@@ -126,7 +250,7 @@
 	}
 
 	function sideText(k: dt.Counts, g: number, yes: boolean) {
-		return `${yes ? 'yes' : 'no'}: ${k[0]} A · ${k[1]} B${s.show.gini ? ` · G ${g.toFixed(2)}` : ''}`;
+		return `${yes ? L('yes') : L('no')}: ${k[0]} A · ${k[1]} B${s.show.gini ? ` · G ${g.toFixed(2)}` : ''}`;
 	}
 
 	function draw(ctx: CanvasRenderingContext2D, w: number, h: number, t: VizTheme) {
@@ -232,7 +356,7 @@
 			const ruleText = `${rule(s.split)} ?`;
 			pill(ctx, t, ruleText, w - 14 - pillW(ctx, t, ruleText), h - 34);
 			if (canDrag && !s.did.drag) {
-				const hint = f === 0 ? '← drag to move the split →' : '↕ drag to move the split';
+				const hint = f === 0 ? L('hintX') : L('hintY');
 				pill(ctx, t, hint, (w - pillW(ctx, t, hint)) / 2, h - 62);
 			}
 		}
@@ -265,10 +389,10 @@
 		}
 		for (const v of [-1, -0.5, 0, 0.5, 1])
 			label(ctx, t, String(v), m.x(v), box.y + box.h + 11, { align: 'center', color: t.text3, size: 10 });
-		label(ctx, t, `threshold t`, box.x + box.w, box.y + box.h + 24, { align: 'right', color: t.text3, size: 10 });
+		label(ctx, t, L('threshold'), box.x + box.w, box.y + box.h + 24, { align: 'right', color: t.text3, size: 10 });
 
 		// title + legend
-		label(ctx, t, 'weighted child Gini', 6, 4, { color: t.text3, size: 10, base: 'top' });
+		label(ctx, t, L('childGini'), 6, 4, { color: t.text3, size: 10, base: 'top' });
 		const lx = Math.min(box.x + 110, w - 190);
 		const swatch = (x: number, color: string, lw: number, text: string) => {
 			ctx.strokeStyle = color;
@@ -291,7 +415,7 @@
 		ctx.lineTo(box.x + box.w, m.y(parent));
 		ctx.stroke();
 		ctx.setLineDash([]);
-		label(ctx, t, `parent ${parent.toFixed(3)}`, box.x + box.w, m.y(parent) - 7, { align: 'right', color: t.text3, size: 10 });
+		label(ctx, t, `${L('parent')} ${parent.toFixed(3)}`, box.x + box.w, m.y(parent) - 7, { align: 'right', color: t.text3, size: 10 });
 
 		const line = (f: dt.Feature, color: string, lw: number) => {
 			ctx.strokeStyle = color;
@@ -316,7 +440,7 @@
 			ctx.stroke();
 			dot(ctx, bx, by, 5, t.series[1], t.bg, 2);
 			const right = bx < box.x + box.w - 110;
-			label(ctx, t, `best: ${rule(b)}`, bx + (right ? 9 : -9), by + 4, {
+			label(ctx, t, `${L('best')}: ${rule(b)}`, bx + (right ? 9 : -9), by + 4, {
 				align: right ? 'left' : 'right',
 				color: t.series[1],
 				size: 10,
@@ -358,7 +482,7 @@
 				size: 10,
 				weight: d === s.maxDepth ? 700 : 500
 			});
-		label(ctx, t, 'accuracy vs max_depth', 6, 4, { color: t.text3, size: 10, base: 'top' });
+		label(ctx, t, L('accVsDepth'), 6, 4, { color: t.text3, size: 10, base: 'top' });
 
 		// current depth
 		ctx.strokeStyle = t.axis;
@@ -381,8 +505,8 @@
 			const y = m.y(end[key]) + (key === 'train' ? -dir : dir) * nudge;
 			label(ctx, t, name, m.x(UNLIMITED) + 8, y, { color, size: 10, weight: 700 });
 		};
-		series('train', t.text2, 'train');
-		series('test', t.series[4], 'test');
+		series('train', t.text2, L('train'));
+		series('test', t.series[4], L('test'));
 	}
 	function depthPick(p: { x: number }) {
 		if (!depthMap || !s.ui.depth) return;
@@ -393,24 +517,24 @@
 	const readouts = $derived.by(() => {
 		if (s.mode === 'manual') {
 			const items: { label: string; value: string; highlight?: boolean }[] = [
-				{ label: 'root', value: `${tree.counts[0]} A · ${tree.counts[1]} B` }
+				{ label: L('root'), value: `${tree.counts[0]} A · ${tree.counts[1]} B` }
 			];
-			if (s.show.gini) items.push({ label: 'root Gini', value: tree.gini.toFixed(3) });
+			if (s.show.gini) items.push({ label: L('rootGini'), value: tree.gini.toFixed(3) });
 			if (s.show.counts && s.show.gini) {
 				const sc = manualScore(s);
 				const best = rootBest(s);
-				items.push({ label: 'weighted child Gini', value: sc.weighted.toFixed(3) });
-				items.push({ label: 'gain', value: sc.gain.toFixed(3), highlight: sc.gain >= 0.9 * best.gain });
+				items.push({ label: L('childGini'), value: sc.weighted.toFixed(3) });
+				items.push({ label: L('gain'), value: sc.gain.toFixed(3), highlight: sc.gain >= 0.9 * best.gain });
 			}
 			return items;
 		}
 		const a = accuracies(s);
 		const items: { label: string; value: string; highlight?: boolean }[] = [
-			{ label: 'depth', value: `${a.depth}${s.maxDepth < UNLIMITED ? ` / ${s.maxDepth}` : ''}` },
-			{ label: 'leaves', value: String(a.leaves) },
-			{ label: 'train acc', value: pct(a.train), highlight: a.train === 1 }
+			{ label: L('depth'), value: `${a.depth}${s.maxDepth < UNLIMITED ? ` / ${s.maxDepth}` : ''}` },
+			{ label: L('leaves'), value: String(a.leaves) },
+			{ label: L('trainAcc'), value: pct(a.train), highlight: a.train === 1 }
 		];
-		if (s.show.acc) items.push({ label: 'test acc', value: pct(a.test), highlight: true });
+		if (s.show.acc) items.push({ label: L('testAcc'), value: pct(a.test), highlight: true });
 		return items;
 	});
 
@@ -423,7 +547,7 @@
 		aspect={0.72}
 		minHeight={280}
 		maxHeight={440}
-		label="Scatter plot of two classes with the tree's split lines and rectangular decision regions"
+		label={L('scatterLabel')}
 		cursor={canDrag ? (s.split.f === 0 ? 'ew-resize' : 'ns-resize') : 'default'}
 		onpointerdown={down}
 		onpointermove={move}
@@ -431,10 +555,10 @@
 	/>
 
 	<div class="legend">
-		<span class="key"><i class="dot a"></i>class A</span>
-		<span class="key"><i class="sq b"></i>class B</span>
-		{#if s.mode === 'tree' && s.show.regions}<span class="key"><i class="ring"></i>misclassified</span>{/if}
-		{#if s.view === 'test'}<span class="key note">showing the {test(s).y.length} held-out test points</span>{/if}
+		<span class="key"><i class="dot a"></i>{L('classA')}</span>
+		<span class="key"><i class="sq b"></i>{L('classB')}</span>
+		{#if s.mode === 'tree' && s.show.regions}<span class="key"><i class="ring"></i>{L('misclassified')}</span>{/if}
+		{#if s.view === 'test'}<span class="key note">{L('showingTest', { n: test(s).y.length })}</span>{/if}
 	</div>
 
 	<Readouts items={readouts} />
@@ -450,7 +574,7 @@
 				aspect={0.3}
 				minHeight={150}
 				maxHeight={180}
-				label="Weighted child impurity for every threshold on the current feature"
+				label={L('curveLabel')}
 				cursor={canDrag ? 'ew-resize' : 'default'}
 				onpointerdown={(p) => {
 					curveDrag = true;
@@ -469,7 +593,7 @@
 				aspect={0.3}
 				minHeight={150}
 				maxHeight={180}
-				label="Train and test accuracy for each max_depth"
+				label={L('depthLabel')}
 				cursor={s.ui.depth ? 'pointer' : 'default'}
 				onpointerdown={depthPick}
 			/>
@@ -480,51 +604,51 @@
 		<div class="controls">
 			{#if s.ui.axis}
 				<Segmented
-					label="Split on"
+					label={L('splitOn')}
 					bind:value={s.split.f}
 					options={[
-						{ value: 0, label: 'x₁ (vertical line)' },
-						{ value: 1, label: 'x₂ (horizontal line)' }
+						{ value: 0, label: L('vertical') },
+						{ value: 1, label: L('horizontal') }
 					]}
 				/>
 			{/if}
 			{#if s.ui.grow}
 				<div class="buttons">
-					<button class="btn btn-sm btn-primary" onclick={() => grow(s)} disabled={!canGrow(s)}>+ Grow one level</button>
+					<button class="btn btn-sm btn-primary" onclick={() => grow(s)} disabled={!canGrow(s)}>{L('grow')}</button>
 					<button class="btn btn-sm" onclick={() => setDepth(s, Math.max(0, Math.min(s.maxDepth, accuracies(s).depth) - 1))} disabled={s.maxDepth === 0}
-						>− Prune a level</button
+						>{L('prune')}</button
 					>
 				</div>
 			{/if}
 			{#if s.ui.depth}
-				<Slider label="max_depth" bind:value={s.maxDepth} min={0} max={UNLIMITED} format={depthLabel} oninput={(d) => setDepth(s, d)} />
+				<Slider label="max_depth" bind:value={s.maxDepth} min={0} max={UNLIMITED} format={(d) => (d >= UNLIMITED ? L('none') : depthLabel(d))} oninput={(d) => setDepth(s, d)} />
 			{/if}
 			{#if s.ui.minLeaf}
 				<Slider label="min_samples_leaf" bind:value={s.minLeaf} min={1} max={30} />
 			{/if}
 			{#if s.ui.view}
 				<Segmented
-					label="Show points"
+					label={L('showPoints')}
 					bind:value={s.view}
 					options={[
-						{ value: 'train', label: 'Train' },
-						{ value: 'test', label: 'Test' }
+						{ value: 'train', label: L('trainOpt') },
+						{ value: 'test', label: L('testOpt') }
 					]}
 				/>
 			{/if}
 			{#if s.ui.dataset}
 				<Segmented
-					label="Labels"
+					label={L('labels')}
 					bind:value={s.dataset}
 					options={[
-						{ value: 'noisy', label: '10% noisy' },
-						{ value: 'clean', label: 'Clean' }
+						{ value: 'noisy', label: L('noisy') },
+						{ value: 'clean', label: L('clean') }
 					]}
 				/>
 			{/if}
 			{#if s.ui.resample}
 				<div class="buttons">
-					<button class="btn btn-sm" onclick={() => resample(s)}>↻ New training sample</button>
+					<button class="btn btn-sm" onclick={() => resample(s)}>{L('resample')}</button>
 				</div>
 			{/if}
 		</div>

@@ -29,6 +29,8 @@ export interface TreeState {
 }
 
 export const DATA_SEED = 21;
+/** Test accuracy the learner has to reach on the overfitting step. */
+export const TARGET = 0.86;
 const N_TRAIN = 150;
 const N_TEST = 500;
 const FLIP: Record<Dataset, number> = { noisy: 0.1, clean: 0 };

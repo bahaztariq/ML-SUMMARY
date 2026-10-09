@@ -4,6 +4,7 @@
 import { fmt } from '#lib/viz/canvas.ts';
 import type { ExplainerModule } from '../types';
 import Scene from './Scene.svelte';
+import i18n from './i18n';
 import {
 	BAD_SEED,
 	GOOD_SEED,
@@ -22,6 +23,7 @@ const explainer: ExplainerModule<KMeansState> = {
 	title: 'How K-Means finds clusters',
 	init,
 	Scene,
+	i18n,
 	steps: [
 		{
 			title: 'Points without labels',

@@ -3,7 +3,9 @@
  */
 import type { ExplainerModule } from '../types';
 import Scene from './Scene.svelte';
+import i18n from './i18n';
 import {
+	TARGET,
 	UNLIMITED,
 	accuracies,
 	fitted,
@@ -23,13 +25,12 @@ import {
 
 const START = { f: 0, thr: 0.55 } as const;
 const f3 = (v: number) => v.toFixed(3);
-/** Test accuracy the learner has to reach on the overfitting step. */
-const TARGET = 0.86;
 
 const explainer: ExplainerModule<TreeState> = {
 	title: 'How a decision tree learns its splits',
 	init,
 	Scene,
+	i18n,
 	steps: [
 		{
 			title: 'Sorting points with yes/no questions',

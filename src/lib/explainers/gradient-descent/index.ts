@@ -4,7 +4,8 @@
 import { fmt } from '#lib/viz/canvas.ts';
 import type { ExplainerModule } from '../types.ts';
 import Scene from './Scene.svelte';
-import * as gd from './gd.ts';
+import i18n from './i18n.ts';
+import { BUMPY, FIT, REACHED_EN, STEPS_GOOD, STEPS_SLOW, now, reachedIn } from './narration.ts';
 import {
 	BUMPY_START,
 	FIT_MIN,
@@ -12,7 +13,6 @@ import {
 	GLOBAL_MIN,
 	LOCAL_MIN,
 	current,
-	num,
 	info,
 	init,
 	iterations,
@@ -25,31 +25,13 @@ import {
 	type GDState
 } from './state.ts';
 
-const FIT = gd.PROBLEMS.fit;
-const BUMPY = gd.PROBLEMS.bumpy;
-/** How many steps the fit loss needs from the start at a given η (for narration). */
-const stepsAt = (lr: number) => gd.stepsToMin(FIT, gd.descend(FIT, [FIT_START], lr, 1000));
-const STEPS_GOOD = stepsAt(0.25);
-const STEPS_SLOW = stepsAt(0.02);
-
-/** "w = 1.23" etc. for the current position. */
-const now = (s: GDState) => {
-	const i = info(s);
-	return { w: num(i.w[0]), loss: num(i.loss, 3), g: num(i.grad[0]), move: num(i.move[0], 3), raw: i };
-};
-
-const reached = (s: GDState, budget?: number) => {
-	const k = stepsToMin(s);
-	if (s.diverged) return `**diverged** after ${iterations(s)} steps (loss ${fmt(info(s).loss, 1)})`;
-	if (k >= 0) return `reached the minimum in **${k} step${k === 1 ? '' : 's'}**`;
-	if (info(s).loss > problem(s).loss(s.start)) return `moving **away** from the minimum (${iterations(s)} steps so far)`;
-	return `still **not at the minimum** after ${budget ?? iterations(s)} steps`;
-};
+const reached = reachedIn(REACHED_EN);
 
 const explainer: ExplainerModule<GDState> = {
 	title: 'How gradient descent walks downhill',
 	init,
 	Scene,
+	i18n,
 	steps: [
 		{
 			title: 'Loss is a landscape',

@@ -4,7 +4,14 @@
 -->
 <script lang="ts">
 	import type { Node } from './tree';
+	import { local } from '#lib/i18n/index.svelte.ts';
 	import { CLASS, featName } from './state';
+
+	const L = local({
+		en: { yes: 'yes', no: 'no', root: 'root', toClass: '→ class {c}', leafTitle: 'Leaf → class {c}', samples: '{n} samples', aria: 'Decision tree diagram' },
+		fr: { yes: 'oui', no: 'non', root: 'racine', toClass: '→ classe {c}', leafTitle: 'Feuille → classe {c}', samples: '{n} points', aria: "Schéma de l'arbre de décision" },
+		ar: { yes: 'نعم', no: 'لا', root: 'الجذر', toClass: '→ الفئة {c}', leafTitle: 'ورقة → الفئة {c}', samples: '{n} عيّنة', aria: 'مخطط شجرة القرار' }
+	});
 
 	interface Props {
 		root: Node;
@@ -73,7 +80,7 @@
 	});
 </script>
 
-<div class="wrap" bind:this={wrapEl} bind:clientWidth={width} role="img" aria-label="Decision tree diagram">
+<div class="wrap" bind:this={wrapEl} bind:clientWidth={width} role="img" aria-label={L('aria')} dir="ltr">
 	<svg viewBox="0 0 {vbW} {vbH}" width={pxW} height={pxH} class:compact>
 		{#each layout.nodes as p (p.node.id)}
 			{#if p.parent}
@@ -88,7 +95,7 @@
 				/>
 				{#if !compact}
 					<text class="edge-label" x={(x0 + x1) / 2 + (p.yes ? -6 : 6)} y={(y0 + y1) / 2} text-anchor={p.yes ? 'end' : 'start'}
-						>{p.yes ? 'yes' : 'no'}</text
+						>{p.yes ? L('yes') : L('no')}</text
 					>
 				{/if}
 			{/if}
@@ -106,7 +113,7 @@
 				onpointerleave={() => onhover?.(-1)}
 			>
 				<title
-					>{n.split ? `${featName(n.split.f)} ≤ ${n.split.thr.toFixed(2)}?` : `Leaf → class ${CLASS[n.pred]}`} · {n.n} samples · {n.counts[0]} A / {n.counts[1]} B · Gini {n.gini.toFixed(3)}</title
+					>{n.split ? `${featName(n.split.f)} ≤ ${n.split.thr.toFixed(2)}?` : L('leafTitle', { c: CLASS[n.pred] })} · {L('samples', { n: n.n })} · {n.counts[0]} A / {n.counts[1]} B · Gini {n.gini.toFixed(3)}</title
 				>
 				{#if compact}
 					<circle
@@ -130,7 +137,7 @@
 						class:leaf={leafNode && !(preview && !p.parent)}
 					/>
 					<text class="rule" x="0" y="15" text-anchor="middle">
-						{#if n.split}{featName(n.split.f)} ≤ {n.split.thr.toFixed(2)}{:else if preview && !p.parent}root{:else}→ class {CLASS[n.pred]}{/if}
+						{#if n.split}{featName(n.split.f)} ≤ {n.split.thr.toFixed(2)}{:else if preview && !p.parent}{L('root')}{:else}{L('toClass', { c: CLASS[n.pred] })}{/if}
 					</text>
 					<text class="meta" x="0" y="30" text-anchor="middle">n={n.n} · G {n.gini.toFixed(2)}</text>
 					<!-- class proportion bar -->

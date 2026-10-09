@@ -5,11 +5,87 @@
 	import Segmented from '#lib/viz/controls/Segmented.svelte';
 	import Readouts from '#lib/viz/controls/Readouts.svelte';
 	import { alpha, dot, fmt, label, squareMapper, ticks, mapper, type VizTheme } from '#lib/viz/canvas.ts';
+	import { local } from '#lib/i18n/index.svelte.ts';
 	import type { SceneProps } from '../types';
 	import * as km from './kmeans';
 	import { currentInertia, doAssign, place, restart, setData, stepOnce, type KMeansState } from './state';
 
 	let { s = $bindable(), step }: SceneProps<KMeansState> = $props();
+
+	const L = local({
+		en: {
+			dragHint: 'drag a centroid ↔',
+			inertia: 'inertia',
+			converged: 'converged ✓',
+			noCentroids: 'no centroids yet',
+			nextAssign: 'next: assign',
+			nextUpdate: 'next: update',
+			scatterLabel: 'Scatter plot of data points coloured by cluster, with draggable centroids',
+			iteration: 'iteration',
+			status: 'status',
+			elbowLabel: 'Elbow plot: inertia for K from 1 to 8',
+			stepAssign: 'Step: assign',
+			stepUpdate: 'Step: update',
+			pause: '❚❚ Pause',
+			run: '▶ Run',
+			newStart: '↺ New start',
+			kClusters: 'K (clusters)',
+			initialization: 'Initialization',
+			random: 'Random',
+			dataset: 'Dataset',
+			blobs: 'Blobs',
+			uneven: 'Uneven',
+			moons: 'Moons'
+		},
+		fr: {
+			dragHint: 'faites glisser un centroïde ↔',
+			inertia: 'inertie',
+			converged: 'convergé ✓',
+			noCentroids: 'pas encore de centroïdes',
+			nextAssign: 'suite : affecter',
+			nextUpdate: 'suite : mettre à jour',
+			scatterLabel: 'Nuage de points colorés par cluster, avec des centroïdes déplaçables',
+			iteration: 'itération',
+			status: 'état',
+			elbowLabel: 'Courbe du coude : inertie pour K de 1 à 8',
+			stepAssign: 'Pas : affecter',
+			stepUpdate: 'Pas : mettre à jour',
+			pause: '❚❚ Pause',
+			run: '▶ Lancer',
+			newStart: '↺ Nouveau départ',
+			kClusters: 'K (clusters)',
+			initialization: 'Initialisation',
+			random: 'Aléatoire',
+			dataset: 'Jeu de données',
+			blobs: 'Amas',
+			uneven: 'Inégal',
+			moons: 'Lunes'
+		},
+		ar: {
+			dragHint: 'اسحب أحد المراكز ↔',
+			inertia: 'العطالة',
+			converged: 'تقارب ✓',
+			noCentroids: 'لا مراكز بعد',
+			nextAssign: 'التالي: الإسناد',
+			nextUpdate: 'التالي: التحديث',
+			scatterLabel: 'مخطط انتشار لنقاط البيانات ملوّنة حسب العنقود، مع مراكز قابلة للسحب',
+			iteration: 'التكرار',
+			status: 'الحالة',
+			elbowLabel: 'مخطط المرفق: العطالة لقيم K من 1 إلى 8',
+			stepAssign: 'خطوة: إسناد',
+			stepUpdate: 'خطوة: تحديث',
+			pause: '❚❚ إيقاف مؤقت',
+			run: '▶ تشغيل',
+			newStart: '↺ بداية جديدة',
+			kClusters: 'K (العناقيد)',
+			initialization: 'التهيئة',
+			random: 'عشوائي',
+			dataset: 'البيانات',
+			blobs: 'كتل',
+			uneven: 'غير متوازنة',
+			moons: 'أهلّة'
+		}
+	});
 
 	const DOMAIN: [number, number] = [-1.25, 1.25];
 	const PAD = 10;
@@ -188,7 +264,7 @@
 		});
 
 		if (s.ui.drag && dragging < 0 && hover < 0 && !s.did.drag && disp.length) {
-			label(ctx, t, 'drag a centroid ↔', w - 12, h - 14, { align: 'right', color: t.text3, size: 11 });
+			label(ctx, t, L('dragHint'), w - 12, h - 14, { align: 'right', color: t.text3, size: 11 });
 		}
 	}
 
@@ -228,7 +304,7 @@
 			const cur = i + 1 === s.k;
 			dot(ctx, m.x(i + 1), m.y(v), cur ? 6 : 3.5, cur ? t.accent : t.bg, t.accent, 2);
 		});
-		label(ctx, t, 'inertia', box.x, 4, { color: t.text3, size: 10, base: 'top' });
+		label(ctx, t, L('inertia'), box.x, 4, { color: t.text3, size: 10, base: 'top' });
 	}
 
 	function pickK(p: { x: number }) {
@@ -248,14 +324,14 @@
 
 	const statusText = $derived(
 		s.converged
-			? 'converged ✓'
+			? L('converged')
 			: s.phase === 'data'
-				? 'no centroids yet'
+				? L('noCentroids')
 				: s.phase === 'placed'
-					? 'next: assign'
+					? L('nextAssign')
 					: s.phase === 'assigned'
-						? 'next: update'
-						: 'next: assign'
+						? L('nextUpdate')
+						: L('nextAssign')
 	);
 </script>
 
@@ -265,7 +341,7 @@
 		aspect={0.72}
 		minHeight={280}
 		maxHeight={460}
-		label="Scatter plot of data points coloured by cluster, with draggable centroids"
+		label={L('scatterLabel')}
 		cursor={dragging >= 0 ? 'grabbing' : hover >= 0 ? 'grab' : 'default'}
 		onpointerdown={down}
 		onpointermove={move}
@@ -276,16 +352,16 @@
 		<Readouts
 			items={[
 				{ label: 'K', value: String(s.k) },
-				{ label: 'iteration', value: String(s.iteration) },
-				{ label: 'inertia', value: fmt(currentInertia(s)), highlight: s.phase === 'updated' || s.converged },
-				{ label: 'status', value: statusText }
+				{ label: L('iteration'), value: String(s.iteration) },
+				{ label: L('inertia'), value: fmt(currentInertia(s)), highlight: s.phase === 'updated' || s.converged },
+				{ label: L('status'), value: statusText }
 			]}
 		/>
 	</div>
 
 	{#if s.show.elbow}
 		<div class="elbow">
-			<Canvas draw={drawElbow} aspect={0.28} minHeight={130} maxHeight={170} label="Elbow plot: inertia for K from 1 to 8" onpointerdown={pickK} cursor={s.ui.k ? 'pointer' : 'default'} />
+			<Canvas draw={drawElbow} aspect={0.28} minHeight={130} maxHeight={170} label={L('elbowLabel')} onpointerdown={pickK} cursor={s.ui.k ? 'pointer' : 'default'} />
 		</div>
 	{/if}
 
@@ -295,26 +371,26 @@
 				<div class="buttons">
 					{#if s.ui.step}
 						<button class="btn btn-sm" onclick={() => (stop(), stepOnce(s))} disabled={s.converged}>
-							Step: {s.phase === 'assigned' ? 'update' : 'assign'}
+							{s.phase === 'assigned' ? L('stepUpdate') : L('stepAssign')}
 						</button>
 					{/if}
 					{#if s.ui.run}
-						<button class="btn btn-sm btn-primary" onclick={play}>{playing ? '❚❚ Pause' : '▶ Run'}</button>
+						<button class="btn btn-sm btn-primary" onclick={play}>{playing ? L('pause') : L('run')}</button>
 					{/if}
 					{#if s.ui.restart}
-						<button class="btn btn-sm" onclick={() => (stop(), restart(s))}>↺ New start</button>
+						<button class="btn btn-sm" onclick={() => (stop(), restart(s))}>{L('newStart')}</button>
 					{/if}
 				</div>
 			{/if}
 			{#if s.ui.k}
-				<Slider label="K (clusters)" bind:value={s.k} min={1} max={8} oninput={setK} />
+				<Slider label={L('kClusters')} bind:value={s.k} min={1} max={8} oninput={setK} />
 			{/if}
 			{#if s.ui.init}
 				<Segmented
-					label="Initialization"
+					label={L('initialization')}
 					bind:value={s.initMethod}
 					options={[
-						{ value: 'random', label: 'Random' },
+						{ value: 'random', label: L('random') },
 						{ value: 'plusplus', label: 'k-means++' }
 					]}
 					onchange={() => (stop(), place(s))}
@@ -322,12 +398,12 @@
 			{/if}
 			{#if s.ui.dataset}
 				<Segmented
-					label="Dataset"
+					label={L('dataset')}
 					bind:value={s.dataset}
 					options={[
-						{ value: 'blobs', label: 'Blobs' },
-						{ value: 'uneven', label: 'Uneven' },
-						{ value: 'moons', label: 'Moons' }
+						{ value: 'blobs', label: L('blobs') },
+						{ value: 'uneven', label: L('uneven') },
+						{ value: 'moons', label: L('moons') }
 					]}
 					onchange={(d) => {
 						stop();

@@ -5,6 +5,7 @@
 	import Segmented from '#lib/viz/controls/Segmented.svelte';
 	import Readouts from '#lib/viz/controls/Readouts.svelte';
 	import { alpha, clamp, dot, fmt, label, mapper, squareMapper, ticks, type VizTheme } from '#lib/viz/canvas.ts';
+	import { local } from '#lib/i18n/index.svelte.ts';
 	import type { SceneProps } from '../types.ts';
 	import * as gd from './gd.ts';
 	import {
@@ -26,6 +27,111 @@
 	} from './state.ts';
 
 	let { s = $bindable(), step }: SceneProps<GDState> = $props();
+
+	const L = local({
+		en: {
+			diverging: 'diverging: loss is growing',
+			convergedMsg: 'converged: gradient ≈ 0',
+			loss: 'loss',
+			globalMin: 'global minimum',
+			localMin: 'local minimum',
+			minimum: 'minimum',
+			slope: 'slope {v}',
+			offChart: 'w = {w} is off the chart',
+			dragHint1d: 'drag along the curve to move w ↔',
+			data: 'data',
+			dragHint2d: 'click or drag to choose a start',
+			statusDiverging: 'diverging',
+			statusConverged: 'converged ✓',
+			atMin: 'at min (step {k})',
+			atStart: 'at start',
+			descending: 'descending',
+			step: 'step',
+			status: 'status',
+			label2d: 'Contour map of a two-weight loss with the gradient descent path',
+			label1d: 'Loss curve with a ball showing the current weight and its gradient descent path',
+			stepBtn: 'Step',
+			pause: '❚❚ Pause',
+			run: '▶ Run',
+			reset: '↺ Reset',
+			lr: 'Learning rate η',
+			lossPicker: 'Loss',
+			lineFit: 'Line fit',
+			twoValleys: 'Two valleys',
+			bowl2d: '2-D bowl',
+			bowlShape: 'Bowl shape',
+			stretched: 'Stretched',
+			round: 'Round (scaled)'
+		},
+		fr: {
+			diverging: 'divergence : la perte augmente',
+			convergedMsg: 'convergé : gradient ≈ 0',
+			loss: 'perte',
+			globalMin: 'minimum global',
+			localMin: 'minimum local',
+			minimum: 'minimum',
+			slope: 'pente {v}',
+			offChart: 'w = {w} hors du graphique',
+			dragHint1d: 'glissez le long de la courbe pour déplacer w ↔',
+			data: 'données',
+			dragHint2d: 'cliquez ou glissez pour choisir un départ',
+			statusDiverging: 'diverge',
+			statusConverged: 'convergé ✓',
+			atMin: 'au min (pas {k})',
+			atStart: 'au départ',
+			descending: 'en descente',
+			step: 'pas',
+			status: 'état',
+			label2d: 'Carte de niveaux d’une perte à deux poids avec le chemin de la descente de gradient',
+			label1d: 'Courbe de perte avec une bille montrant le poids actuel et le chemin de la descente de gradient',
+			stepBtn: 'Pas',
+			pause: '❚❚ Pause',
+			run: '▶ Lancer',
+			reset: '↺ Réinitialiser',
+			lr: 'Taux d’apprentissage η',
+			lossPicker: 'Perte',
+			lineFit: 'Ajustement de droite',
+			twoValleys: 'Deux vallées',
+			bowl2d: 'Cuvette 2D',
+			bowlShape: 'Forme de la cuvette',
+			stretched: 'Étirée',
+			round: 'Ronde (normalisée)'
+		},
+		ar: {
+			diverging: 'تباعد: الخسارة تتزايد',
+			convergedMsg: 'تقارب: التدرج ≈ 0',
+			loss: 'الخسارة',
+			globalMin: 'قيمة صغرى عامة',
+			localMin: 'قيمة صغرى محلية',
+			minimum: 'القيمة الصغرى',
+			slope: 'الميل {v}',
+			offChart: 'w = {w} خارج المخطط',
+			dragHint1d: 'اسحب على طول المنحنى لتحريك w ↔',
+			data: 'البيانات',
+			dragHint2d: 'انقر أو اسحب لاختيار نقطة البداية',
+			statusDiverging: 'يتباعد',
+			statusConverged: 'تقارب ✓',
+			atMin: 'عند الصغرى (الخطوة {k})',
+			atStart: 'عند البداية',
+			descending: 'ينحدر',
+			step: 'الخطوة',
+			status: 'الحالة',
+			label2d: 'خريطة كنتورية لخسارة بوزنين مع مسار الانحدار التدرجي',
+			label1d: 'منحنى الخسارة مع كرة تُظهر الوزن الحالي ومسار الانحدار التدرجي',
+			stepBtn: 'خطوة',
+			pause: '❚❚ إيقاف مؤقت',
+			run: '▶ تشغيل',
+			reset: '↺ إعادة ضبط',
+			lr: 'معدل التعلم η',
+			lossPicker: 'الخسارة',
+			lineFit: 'ملاءمة خط',
+			twoValleys: 'واديان',
+			bowl2d: 'وعاء ثنائي الأبعاد',
+			bowlShape: 'شكل الوعاء',
+			stretched: 'ممدود',
+			round: 'دائري (موحَّد المقياس)'
+		}
+	});
 
 	/* ---- path animation: `shown` (fractional index) eases toward the last point ---- */
 	let shown = $state(0);
@@ -139,8 +245,8 @@
 	}
 
 	function drawStatus(ctx: CanvasRenderingContext2D, t: VizTheme, x: number, y: number) {
-		if (escaping(s) && settled) label(ctx, t, 'diverging: loss is growing', x, y, { align: 'right', color: t.series[3], size: 12, weight: 600 });
-		else if (s.converged && settled) label(ctx, t, 'converged: gradient ≈ 0', x, y, { align: 'right', color: t.series[1], size: 12, weight: 600 });
+		if (escaping(s) && settled) label(ctx, t, L('diverging'), x, y, { align: 'right', color: t.series[3], size: 12, weight: 600 });
+		else if (s.converged && settled) label(ctx, t, L('convergedMsg'), x, y, { align: 'right', color: t.series[1], size: 12, weight: 600 });
 	}
 
 	/* ---- 1-D: loss curve ---- */
@@ -149,7 +255,7 @@
 		const box = { x: 44, y: 14, w: w - 58, h: h - 44 };
 		const m = mapper(box, pr.domain, pr.range);
 		map = m;
-		const L = (x: number) => pr.loss([x]);
+		const lossAt = (x: number) => pr.loss([x]);
 
 		// grid + axes labels
 		ctx.lineWidth = 1;
@@ -170,7 +276,7 @@
 			label(ctx, t, fmt(v, Number.isInteger(v) ? 0 : 1), m.x(v), box.y + box.h + 12, { align: 'center', color: t.text3, size: 10 });
 		}
 		label(ctx, t, 'w →', box.x + box.w, box.y + box.h + 26, { align: 'right', color: t.text2, size: 11, weight: 600 });
-		label(ctx, t, 'loss', 6, box.y - 2, { color: t.text2, size: 11, weight: 600, base: 'top' });
+		label(ctx, t, L('loss'), 6, box.y - 2, { color: t.text2, size: 11, weight: 600, base: 'top' });
 
 		clipTo(ctx, box);
 
@@ -180,7 +286,7 @@
 		for (let i = 0; i <= N; i++) {
 			const x = pr.domain[0] + ((pr.domain[1] - pr.domain[0]) * i) / N;
 			const px = m.x(x);
-			const py = m.y(L(x));
+			const py = m.y(lossAt(x));
 			if (i) ctx.lineTo(px, py);
 			else ctx.moveTo(px, py);
 		}
@@ -192,8 +298,8 @@
 		ctx.beginPath();
 		for (let i = 0; i <= N; i++) {
 			const x = pr.domain[0] + ((pr.domain[1] - pr.domain[0]) * i) / N;
-			if (i) ctx.lineTo(m.x(x), m.y(L(x)));
-			else ctx.moveTo(m.x(x), m.y(L(x)));
+			if (i) ctx.lineTo(m.x(x), m.y(lossAt(x)));
+			else ctx.moveTo(m.x(x), m.y(lossAt(x)));
 		}
 		ctx.strokeStyle = t.text2;
 		ctx.lineWidth = 2;
@@ -203,10 +309,10 @@
 		if (s.show.minima) {
 			for (const mn of pr.minima) {
 				const x = m.x(mn.w[0]);
-				const y = m.y(L(mn.w[0]));
+				const y = m.y(lossAt(mn.w[0]));
 				const col = mn.global ? t.series[1] : t.series[2];
 				dot(ctx, x, y, 4, col);
-				const text = pr.minima.length > 1 ? (mn.global ? 'global minimum' : 'local minimum') : 'minimum';
+				const text = pr.minima.length > 1 ? (mn.global ? L('globalMin') : L('localMin')) : L('minimum');
 				label(ctx, t, text, x, y + 16, { align: 'center', color: col, size: 11, weight: 600 });
 			}
 		}
@@ -215,13 +321,13 @@
 
 		// path so far
 		const upto = Math.floor(shown);
-		const pts = s.path.slice(0, upto + 1).map(([x]) => [m.x(x), m.y(L(x))]);
+		const pts = s.path.slice(0, upto + 1).map(([x]) => [m.x(x), m.y(lossAt(x))]);
 		const ball = ballPos();
 		const bx = m.x(ball[0]);
 		const by =
 			upto < s.path.length - 1
-				? m.y(L(s.path[upto][0]) + (L(s.path[upto + 1][0]) - L(s.path[upto][0])) * (shown - upto))
-				: m.y(L(ball[0]));
+				? m.y(lossAt(s.path[upto][0]) + (lossAt(s.path[upto + 1][0]) - lossAt(s.path[upto][0])) * (shown - upto))
+				: m.y(lossAt(ball[0]));
 		if (pts.length > 0) {
 			ctx.strokeStyle = alpha(t.series[0], 0.55);
 			ctx.lineWidth = 1.5;
@@ -251,7 +357,7 @@
 			ctx.stroke();
 			const tx = bx + (dx / n) * r;
 			const ty = by + (dy / n) * r;
-			label(ctx, t, `slope ${num(here.grad[0])}`, tx + 6, ty, { color: t.series[2], size: 11, weight: 600 });
+			label(ctx, t, L('slope', { v: num(here.grad[0]) }), tx + 6, ty, { color: t.series[2], size: 11, weight: 600 });
 		}
 
 		// next move −η·∇L
@@ -266,10 +372,10 @@
 				ctx.lineWidth = 1.2;
 				ctx.beginPath();
 				ctx.moveTo(x1, by);
-				ctx.lineTo(x1, m.y(L(nx)));
+				ctx.lineTo(x1, m.y(lossAt(nx)));
 				ctx.stroke();
 				ctx.setLineDash([]);
-				dot(ctx, x1, m.y(L(nx)), 5, alpha(t.series[1], 0.25), t.series[1], 1.5);
+				dot(ctx, x1, m.y(lossAt(nx)), 5, alpha(t.series[1], 0.25), t.series[1], 1.5);
 				if (long) label(ctx, t, '−η·∇L', (bx + x1) / 2, by - 12, { align: 'center', color: t.series[1], size: 11, weight: 600 });
 			}
 		}
@@ -284,7 +390,7 @@
 		const ey = clamp(by, box.y + 8, box.y + box.h - 8);
 		if (ex !== bx || ey !== by) {
 			dot(ctx, ex, ey, 6, t.bg, t.series[3], 2);
-			label(ctx, t, `w = ${fmt(ball[0], 1)} is off the chart`, ex + (ex > box.x + box.w / 2 ? -12 : 12), ey + 16, {
+			label(ctx, t, L('offChart', { w: fmt(ball[0], 1) }), ex + (ex > box.x + box.w / 2 ? -12 : 12), ey + 16, {
 				align: ex > box.x + box.w / 2 ? 'right' : 'left',
 				color: t.series[3],
 				size: 11,
@@ -294,7 +400,7 @@
 
 		drawStatus(ctx, t, box.x + box.w - 6, box.y + 12);
 		if (s.ui.drag && !s.did.drag && !dragging) {
-			label(ctx, t, 'drag along the curve to move w ↔', box.x + box.w - 6, box.y + box.h - 12, { align: 'right', color: t.text3, size: 11 });
+			label(ctx, t, L('dragHint1d'), box.x + box.w - 6, box.y + box.h - 12, { align: 'right', color: t.text3, size: 11 });
 		}
 	}
 
@@ -338,7 +444,7 @@
 		xs.forEach((x, i) => dot(ctx, m.x(x), m.y(ys[i]), 2.8, t.text2));
 		ctx.restore();
 		label(ctx, t, `y = ${fmt(w)}·x`, box.x + 10, box.y + 12, { color: t.series[0], size: 11, weight: 600 });
-		if (iw > 190) label(ctx, t, 'data', box.x + box.w - 10, box.y + 12, { align: 'right', color: t.text3, size: 10 });
+		if (iw > 190) label(ctx, t, L('data'), box.x + box.w - 10, box.y + 12, { align: 'right', color: t.text3, size: 10 });
 	}
 
 	/* ---- 2-D: contour map ---- */
@@ -389,7 +495,7 @@
 		ctx.moveTo(cx + 6, cy - 6);
 		ctx.lineTo(cx - 6, cy + 6);
 		ctx.stroke();
-		if (s.show.minima) label(ctx, t, 'minimum', cx + 10, cy + 14, { color: t.series[1], size: 11, weight: 600 });
+		if (s.show.minima) label(ctx, t, L('minimum'), cx + 10, cy + 14, { color: t.series[1], size: 11, weight: 600 });
 
 		// path
 		const upto = Math.floor(shown);
@@ -418,7 +524,7 @@
 		label(ctx, t, '↑ w₂', box.x + 4, box.y + 10, { color: t.text2, size: 11, weight: 600 });
 		drawStatus(ctx, t, box.x + box.w - 6, box.y + 12);
 		if (s.ui.drag && !s.did.drag && !dragging) {
-			label(ctx, t, 'click or drag to choose a start', box.x + box.w - 6, box.y + box.h - 26, { align: 'right', color: t.text3, size: 11 });
+			label(ctx, t, L('dragHint2d'), box.x + box.w - 6, box.y + box.h - 26, { align: 'right', color: t.text3, size: 11 });
 		}
 	}
 
@@ -433,28 +539,28 @@
 		const here = info(s, s.path[Math.min(i, s.path.length - 1)]);
 		const k = stepsToMin(s);
 		const status = escaping(s)
-			? 'diverging'
+			? L('statusDiverging')
 			: s.converged
-				? 'converged ✓'
+				? L('statusConverged')
 				: k >= 0 && k <= i
-					? `at min (step ${k})`
+					? L('atMin', { k })
 					: i === 0
-						? 'at start'
-						: 'descending';
+						? L('atStart')
+						: L('descending');
 		const items =
 			problem(s).dim === 1
 				? [
 						{ label: 'w', value: fmt(here.w[0]) },
-						{ label: 'loss', value: fmt(here.loss, 3), highlight: true },
+						{ label: L('loss'), value: fmt(here.loss, 3), highlight: true },
 						{ label: '∇L', value: num(here.grad[0]) },
 						{ label: '−η·∇L', value: num(here.move[0], 3) }
 					]
 				: [
 						{ label: 'w', value: `(${fmt(here.w[0])}, ${fmt(here.w[1])})` },
-						{ label: 'loss', value: fmt(here.loss, 3), highlight: true },
+						{ label: L('loss'), value: fmt(here.loss, 3), highlight: true },
 						{ label: '|∇L|', value: num(here.gradNorm) }
 					];
-		return [...items, { label: 'step', value: String(Math.min(i, iterations(s))) }, { label: 'status', value: status }];
+		return [...items, { label: L('step'), value: String(Math.min(i, iterations(s))) }, { label: L('status'), value: status }];
 	});
 
 	const lrMax = $derived(LR_MAX[s.view]);
@@ -467,8 +573,8 @@
 		minHeight={280}
 		maxHeight={460}
 		label={s.view === 'bowl'
-			? 'Contour map of a two-weight loss with the gradient descent path'
-			: 'Loss curve with a ball showing the current weight and its gradient descent path'}
+			? L('label2d')
+			: L('label1d')}
 		cursor={s.ui.drag ? (s.view === 'bowl' ? 'crosshair' : 'ew-resize') : 'default'}
 		onpointerdown={down}
 		onpointermove={move}
@@ -482,19 +588,19 @@
 			{#if s.ui.step || s.ui.run || s.ui.reset}
 				<div class="buttons">
 					{#if s.ui.step}
-						<button class="btn btn-sm" onclick={() => (stop(), stepOnce(s))} disabled={s.converged || s.diverged}>Step</button>
+						<button class="btn btn-sm" onclick={() => (stop(), stepOnce(s))} disabled={s.converged || s.diverged}>{L('stepBtn')}</button>
 					{/if}
 					{#if s.ui.run}
-						<button class="btn btn-sm btn-primary" onclick={play}>{playing ? '❚❚ Pause' : '▶ Run'}</button>
+						<button class="btn btn-sm btn-primary" onclick={play}>{playing ? L('pause') : L('run')}</button>
 					{/if}
 					{#if s.ui.reset}
-						<button class="btn btn-sm" onclick={() => (stop(), reset(s))}>↺ Reset</button>
+						<button class="btn btn-sm" onclick={() => (stop(), reset(s))}>{L('reset')}</button>
 					{/if}
 				</div>
 			{/if}
 			{#if s.ui.lr}
 				<Slider
-					label="Learning rate η"
+					label={L('lr')}
 					bind:value={s.lr}
 					min={0.01}
 					max={lrMax}
@@ -505,23 +611,23 @@
 			{/if}
 			{#if s.ui.view}
 				<Segmented
-					label="Loss"
+					label={L('lossPicker')}
 					bind:value={s.view}
 					options={[
-						{ value: 'fit', label: 'Line fit' },
-						{ value: 'bumpy', label: 'Two valleys' },
-						{ value: 'bowl', label: '2-D bowl' }
+						{ value: 'fit', label: L('lineFit') },
+						{ value: 'bumpy', label: L('twoValleys') },
+						{ value: 'bowl', label: L('bowl2d') }
 					] as { value: View; label: string }[]}
 					onchange={(v) => (stop(), setView(s, v))}
 				/>
 			{/if}
 			{#if s.ui.bowl && s.view === 'bowl'}
 				<Segmented
-					label="Bowl shape"
+					label={L('bowlShape')}
 					bind:value={s.bowl}
 					options={[
-						{ value: 'stretched', label: 'Stretched' },
-						{ value: 'round', label: 'Round (scaled)' }
+						{ value: 'stretched', label: L('stretched') },
+						{ value: 'round', label: L('round') }
 					] as { value: BowlShape; label: string }[]}
 					onchange={() => (stop(), reset(s))}
 				/>
