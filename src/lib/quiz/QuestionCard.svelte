@@ -1,10 +1,4 @@
-<!--
-  One quiz question. Layout is grid-based so nothing jumps:
-  - options share one grid with `grid-auto-rows: 1fr` (equal heights) and each option is a
-    subgrid spanning [letter | text], so letters and texts align across options;
-  - the feedback row is always in the layout (hidden until answered), so answering never
-    moves the Next button.
--->
+<!-- One quiz question: options, then feedback and an explanation once answered. -->
 <script lang="ts">
 	import { i18n, lhref, pick, t } from '#lib/i18n/index.svelte.ts';
 	import { conceptById } from '#lib/content.ts';
@@ -74,8 +68,8 @@
 		{/each}
 	</div>
 
-	<div class="feedback" class:shown={answered} class:ok={record?.correct} aria-live="polite">
-		{#if record}
+	{#if record}
+		<div class="feedback" class:ok={record.correct} aria-live="polite">
 			<p class="verdict">
 				<strong>{record.correct ? t('quiz.correct') : t('quiz.wrong')}</strong>
 				{#if record.correct}
@@ -87,10 +81,10 @@
 			{#if concept}
 				<a class="review" href={lhref(`/concept/${concept.id}`)} target="_blank" rel="noopener">{t('quiz.learnMore', { name: concept.name })} <span aria-hidden="true">{t('common.external')}</span></a>
 			{/if}
-		{:else}
-			<p class="hint">{t('quiz.keyboard')}</p>
-		{/if}
-	</div>
+		</div>
+	{:else}
+		<p class="hint">{t('quiz.keyboard')}</p>
+	{/if}
 
 	<footer class="q-foot">
 		<button class="btn btn-primary" bind:this={nextBtn} disabled={!answered} onclick={onnext}>
@@ -101,9 +95,8 @@
 
 <style>
 	.q {
-		display: grid;
-		/* head | question | options | feedback | footer — feedback keeps its space when empty */
-		grid-template-rows: auto minmax(3.2em, auto) auto minmax(10em, auto) auto;
+		display: flex;
+		flex-direction: column;
 		gap: 18px;
 		padding: 24px;
 	}
@@ -142,17 +135,13 @@
 		align-self: center;
 	}
 
-	/* Options: [letter | text] columns shared by every option through subgrid. */
 	.options {
-		display: grid;
-		grid-template-columns: [letter] auto [text] minmax(0, 1fr) [letter2] auto [text2] minmax(0, 1fr);
-		grid-auto-rows: 1fr;
+		display: flex;
+		flex-direction: column;
 		gap: 10px;
 	}
 	.option {
-		grid-column: span 2;
-		display: grid;
-		grid-template-columns: subgrid;
+		display: flex;
 		align-items: center;
 		gap: 12px;
 		padding: 12px 14px;
@@ -178,6 +167,7 @@
 	.letter {
 		display: grid;
 		place-items: center;
+		flex-shrink: 0;
 		width: 28px;
 		height: 28px;
 		border-radius: 8px;
@@ -208,21 +198,14 @@
 
 	.feedback {
 		display: grid;
-		align-content: start;
 		gap: 6px;
 		padding: 14px 16px;
 		border-radius: var(--radius);
 		background: var(--surface-2);
-		border: 1px solid transparent;
+		border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--border));
 		font-size: 0.925rem;
 	}
-	.feedback:not(.shown) {
-		background: transparent;
-	}
-	.feedback.shown {
-		border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
-	}
-	.feedback.shown.ok {
+	.feedback.ok {
 		border-color: color-mix(in srgb, var(--success) 35%, var(--border));
 	}
 	.verdict {
@@ -255,7 +238,6 @@
 		color: var(--accent);
 	}
 	.hint {
-		align-self: end;
 		font-size: 0.8125rem;
 		color: var(--text-3);
 	}
@@ -267,9 +249,6 @@
 	@media (max-width: 720px) {
 		.q {
 			padding: 18px 16px;
-		}
-		.options {
-			grid-template-columns: [letter] auto [text] minmax(0, 1fr);
 		}
 	}
 </style>

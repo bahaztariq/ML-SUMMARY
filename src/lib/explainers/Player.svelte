@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { i18n, t } from '#lib/i18n/index.svelte.ts';
 	import { rich } from './rich.ts';
@@ -27,35 +27,6 @@
 
 	const step = $derived(steps[index]);
 	const text = (v: Text<any>) => rich(typeof v === 'function' ? v(s) : v);
-	/**
-	 * Inactive steps are only laid out to reserve height. Their live-number text is taken from
-	 * a snapshot rendered with that step's own state while measuring (see measureAll); before
-	 * that exists they fall back to the current state, and render nothing if that fails.
-	 */
-	type Snapshot = { body: string; prompt?: string; explain?: string };
-	let snapshots = $state<{ lang: string; steps: Record<number, Snapshot> }>({ lang: '', steps: {} });
-	const textAt = (v: Text<any>, active: boolean, i: number, field: keyof Snapshot) => {
-		if (active || typeof v !== 'function') return text(v);
-		const snap = snapshots.lang === i18n.current ? snapshots.steps[i]?.[field] : undefined;
-		if (snap !== undefined) return snap;
-		try {
-			return text(v);
-		} catch {
-			return '';
-		}
-	};
-	function snapshot(i: number, state: any): Snapshot {
-		const st = steps[i];
-		const render = (v: Text<any> | undefined) => {
-			if (v === undefined) return undefined;
-			try {
-				return rich(typeof v === 'function' ? v(state) : v);
-			} catch {
-				return '';
-			}
-		};
-		return { body: render(st.body) ?? '', prompt: render(st.task?.prompt), explain: render(st.quiz?.explain) };
-	}
 	const taskDone = $derived(step.task ? step.task.done(s) : false);
 	const answered = $derived(answers[index] !== undefined);
 
@@ -105,125 +76,12 @@
 	const Scene = $derived(module.Scene);
 	const title = $derived((i18n.current !== 'en' && module.i18n?.[i18n.current]?.title) || module.title);
 
-	/*
-	 * Stable stage height. Scenes add panels on some steps, so after the first paint the player
-	 * quietly renders every step's scene in an invisible copy (one per idle slot), measures it,
-	 * and reserves the tallest height. Live changes can still only grow the reservation.
-	 */
-	let stageInner = $state<HTMLDivElement>();
-	let stageMin = $state(0);
-	const grow = (h: number) => {
-		if (h > untrack(() => stageMin)) stageMin = h;
-	};
-	$effect(() => {
-		const el = stageInner;
-		if (!el) return;
-		// Reserve only heights that persist: a step change can overlap old and new content for a
-		// frame, and that momentary spike must not grow the panel for good.
-		let settle: ReturnType<typeof setTimeout> | undefined;
-		const ro = new ResizeObserver(() => {
-			clearTimeout(settle);
-			settle = setTimeout(() => grow(Math.ceil(el.getBoundingClientRect().height)), 250);
-		});
-		ro.observe(el);
-		return () => {
-			clearTimeout(settle);
-			ro.disconnect();
-		};
-	});
-
-	let measureStep = $state<number | null>(null);
-	let measureState = $state<any>(null);
-	let measureEl = $state<HTMLDivElement>();
-	let measureRun = 0;
-	const idle = () =>
-		new Promise<void>((r) =>
-			'requestIdleCallback' in window ? requestIdleCallback(() => r(), { timeout: 400 }) : setTimeout(r, 30)
-		);
-	const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
-
-	async function measureAll() {
-		const run = ++measureRun;
-		// Each step as it first appears, plus quiz steps with their reveal applied.
-		const variants = module.steps.flatMap((st, i) => (st.quiz?.reveal ? [[i, false], [i, true]] : [[i, false]])) as [number, boolean][];
-		const lang = i18n.current;
-		const snaps: Record<number, Snapshot> = {};
-		for (const [i, revealed] of variants) {
-			await idle();
-			if (run !== measureRun) return;
-			try {
-				const st = build(i);
-				if (revealed) module.steps[i].quiz!.reveal!(st);
-				// Keep the longer of the two variants' narration (the reveal can change live numbers).
-				const snap = snapshot(i, st);
-				const prev = snaps[i];
-				snaps[i] = !prev || snap.body.length + (snap.explain?.length ?? 0) > prev.body.length + (prev.explain?.length ?? 0) ? snap : prev;
-				measureState = st;
-			} catch {
-				continue;
-			}
-			measureStep = i;
-			await tick();
-			await frame();
-			await frame();
-			if (run !== measureRun) return;
-			if (measureEl) grow(Math.ceil(measureEl.getBoundingClientRect().height));
-		}
-		measureStep = null;
-		measureState = null;
-		snapshots = { lang, steps: snaps };
-	}
-
-	// A language change changes every text: measure again.
-	let measuredLang = untrack(() => i18n.current);
-	$effect(() => {
-		const lang = i18n.current;
-		if (lang !== measuredLang) {
-			measuredLang = lang;
-			stageMin = 0;
-			measureAll();
-		}
-	});
-
-	onMount(() => {
-		measureAll();
-		return () => measureRun++;
-	});
-
-	// Width changes (rotation, resizing) legitimately change heights: measure again.
-	let lastWidth = 0;
-	let resizeTimer: ReturnType<typeof setTimeout> | undefined;
-	function onresize() {
-		if (window.innerWidth === lastWidth) return;
-		lastWidth = window.innerWidth;
-		clearTimeout(resizeTimer);
-		resizeTimer = setTimeout(() => {
-			stageMin = 0;
-			measureAll();
-		}, 250);
-	}
 </script>
-
-<svelte:window {onresize} />
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <section class="player" style:--acc={accent} {onkeydown} aria-label={title}>
 	<div class="stage">
-		<div class="stage-inner" style:min-height="{stageMin}px">
-			<div bind:this={stageInner}>
-				<Scene bind:s step={index} />
-			</div>
-			{#if measureStep !== null && measureState}
-				<!-- Invisible copy used only to measure each step's height (see measureAll). -->
-				<div class="measure" aria-hidden="true" inert>
-					<div bind:this={measureEl}>
-						{#key measureStep}
-							<Scene bind:s={measureState} step={measureStep} />
-						{/key}
-					</div>
-				</div>
-			{/if}
-		</div>
+		<Scene bind:s step={index} />
 	</div>
 
 	<div class="narration">
@@ -246,57 +104,49 @@
 			</div>
 		</div>
 
-		<!--
-			Every step's narration sits in the same grid cell; only the current one is visible.
-			The cell is therefore as tall as the longest step, so the panel never resizes.
-		-->
-		<div class="contents">
-			{#each steps as st, i (i)}
-				{@const active = i === index}
-				{@const isAnswered = answers[i] !== undefined}
-				<div class="content" class:active aria-hidden={!active} inert={!active}>
-					<h3>{st.title}</h3>
-					<div class="body">{@html textAt(st.body, active, i, 'body')}</div>
+		{#key index}
+			<div class="content">
+				<h3>{step.title}</h3>
+				<div class="body">{@html text(step.body)}</div>
 
-					{#if st.task}
-						{@const done = active ? taskDone : completed.has(i)}
-						<div class="task" class:done>
-							<span class="task-icon" aria-hidden="true">{done ? '✓' : t('common.arrowForward')}</span>
-							<div>
-								<span class="task-label">{done ? t('player.niceTask') : t('player.tryIt')}</span>
-								<div class="task-text">{@html textAt(st.task.prompt, active, i, 'prompt')}</div>
-							</div>
+				{#if step.task}
+					<div class="task" class:done={taskDone}>
+						<span class="task-icon" aria-hidden="true">{taskDone ? '✓' : t('common.arrowForward')}</span>
+						<div>
+							<span class="task-label">{taskDone ? t('player.niceTask') : t('player.tryIt')}</span>
+							<div class="task-text">{@html text(step.task.prompt)}</div>
 						</div>
-					{/if}
+					</div>
+				{/if}
 
-					{#if st.quiz}
-						{@const quiz = st.quiz}
-						<div class="quiz">
-							<p class="question">{quiz.question}</p>
-							<div class="options">
-								{#each quiz.options as opt, k (k)}
-									<button
-										class="option"
-										class:correct={isAnswered && k === quiz.answer}
-										class:wrong={isAnswered && answers[i] === k && k !== quiz.answer}
-										disabled={isAnswered || !active}
-										onclick={() => answer(k)}
-									>
-										<span class="letter">{[...t('common.optionLetters')][k] ?? String.fromCharCode(65 + k)}</span>
-										<span>{opt}</span>
-									</button>
-								{/each}
-							</div>
-							<!-- Always laid out (hidden until answered) so answering never grows the panel. -->
-							<div class="explain" class:right={answers[i] === quiz.answer} class:hidden={!isAnswered} aria-live="polite">
-								<strong>{answers[i] === quiz.answer ? t('player.correct') : t('player.notQuite')}</strong>
-								{@html textAt(quiz.explain, active, i, 'explain')}
-							</div>
+				{#if step.quiz}
+					{@const quiz = step.quiz}
+					<div class="quiz">
+						<p class="question">{quiz.question}</p>
+						<div class="options">
+							{#each quiz.options as opt, k (k)}
+								<button
+									class="option"
+									class:correct={answered && k === quiz.answer}
+									class:wrong={answered && answers[index] === k && k !== quiz.answer}
+									disabled={answered}
+									onclick={() => answer(k)}
+								>
+									<span class="letter">{[...t('common.optionLetters')][k] ?? String.fromCharCode(65 + k)}</span>
+									<span>{opt}</span>
+								</button>
+							{/each}
 						</div>
-					{/if}
-				</div>
-			{/each}
-		</div>
+						{#if answered}
+							<div class="explain" class:right={answers[index] === quiz.answer} aria-live="polite">
+								<strong>{answers[index] === quiz.answer ? t('player.correct') : t('player.notQuite')}</strong>
+								{@html text(quiz.explain)}
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+		{/key}
 
 		<div class="nav">
 			<button class="btn btn-ghost" onclick={() => goTo(index - 1)} disabled={index === 0}>{t('common.arrowBack')} {t('common.back')}</button>
@@ -381,33 +231,8 @@
 		border-radius: 4px;
 		background: var(--acc);
 	}
-	.stage-inner {
-		position: relative;
-		min-width: 0;
-	}
-	.measure {
-		position: absolute;
-		inset-inline: 0;
-		top: 0;
-		visibility: hidden;
-		pointer-events: none;
-		overflow: hidden;
-		height: 0;
-	}
-	.measure > div {
-		height: auto;
-	}
-	.contents {
-		flex: 1;
-		display: grid;
-	}
 	.content {
-		grid-area: 1 / 1;
-		min-width: 0;
-		visibility: hidden;
-	}
-	.content.active {
-		visibility: visible;
+		flex: 1;
 		animation: in 0.25s var(--ease);
 	}
 	h3 {
@@ -552,9 +377,6 @@
 	.option.wrong {
 		border-color: var(--danger);
 		background: color-mix(in srgb, var(--danger) 8%, transparent);
-	}
-	.explain.hidden {
-		visibility: hidden;
 	}
 	.explain {
 		margin-top: 12px;

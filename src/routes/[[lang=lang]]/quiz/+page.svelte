@@ -281,18 +281,16 @@
 		font-size: 1.0625rem;
 	}
 
-	/* Stats: four equal tiles; subgrid keeps label and value rows aligned across tiles. */
 	.stats {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		grid-template-rows: auto auto;
-		gap: 4px 10px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
 		margin: 0 0 16px;
 	}
 	.stat {
-		grid-row: span 2;
-		display: grid;
-		grid-template-rows: subgrid;
+		flex: 1 1 160px;
+		display: flex;
+		flex-direction: column;
 		gap: 4px;
 		padding: 14px 16px;
 	}
@@ -305,7 +303,6 @@
 		font-size: 1.5rem;
 		font-weight: 650;
 		font-variant-numeric: tabular-nums;
-		align-self: end;
 	}
 	.stat small {
 		font-size: 0.8125rem;
@@ -379,20 +376,18 @@
 	.history h2 {
 		margin-bottom: 12px;
 	}
-	/* History rows share one column template through subgrid so dates, scores and bars line up. */
 	.hist {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		grid-template-columns: auto auto minmax(80px, 1fr) auto auto;
-		gap: 6px 14px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
 	}
 	.hist li {
-		grid-column: 1 / -1;
-		display: grid;
-		grid-template-columns: subgrid;
+		display: flex;
 		align-items: center;
+		gap: 14px;
 		padding: 10px 14px;
 		font-size: 0.875rem;
 	}
@@ -405,6 +400,8 @@
 	}
 	.h-bar,
 	.bar {
+		flex: 1;
+		min-width: 40px;
 		height: 6px;
 		border-radius: 3px;
 		background: var(--surface-3);
@@ -460,15 +457,11 @@
 	.hud-item {
 		font-weight: 650;
 		font-variant-numeric: tabular-nums;
-		/* fixed width so changing numbers never shift the layout */
-		min-width: 7ch;
-		text-align: center;
 	}
 	.pts {
 		color: var(--accent);
 	}
 	.streak {
-		min-width: 4.5ch;
 		color: var(--text-3);
 	}
 	.streak.hot {
@@ -548,20 +541,18 @@
 	.panel h2 {
 		font-size: 1.0625rem;
 	}
-	/* Track bars: label | bar | count aligned across rows with subgrid. */
 	.bars {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		grid-template-columns: auto minmax(60px, 1fr) auto;
-		gap: 8px 12px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
 	}
 	.bars li {
-		grid-column: 1 / -1;
-		display: grid;
-		grid-template-columns: subgrid;
+		display: flex;
 		align-items: center;
+		gap: 12px;
 		font-size: 0.875rem;
 	}
 	.bars .bar span {
@@ -614,10 +605,6 @@
 	}
 
 	@media (max-width: 720px) {
-		.stats {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			grid-template-rows: auto auto auto auto;
-		}
 		.score {
 			grid-template-columns: auto minmax(0, 1fr);
 		}
@@ -626,9 +613,6 @@
 		}
 		.results-grid {
 			grid-template-columns: 1fr;
-		}
-		.hist {
-			grid-template-columns: auto auto minmax(40px, 1fr) auto;
 		}
 		.h-mode {
 			display: none;
