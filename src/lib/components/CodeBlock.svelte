@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/index.svelte.ts';
 	let { code, lang }: { code: string; lang?: string } = $props();
 	let copied = $state(false);
 
@@ -25,9 +26,9 @@
 <div class="code">
 	<div class="head">
 		<span class="lang">{language}</span>
-		<button class="btn btn-sm btn-ghost" onclick={copy}>{copied ? '✓ Copied' : 'Copy'}</button>
+		<button class="btn btn-sm btn-ghost" onclick={copy}>{copied ? t('common.copied') : t('common.copy')}</button>
 	</div>
-	<pre><code>{code}</code></pre>
+	<pre dir="ltr"><code>{code}</code></pre>
 </div>
 
 <style>
@@ -41,7 +42,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 4px 6px 4px 14px;
+		padding-block: 4px;
+		padding-inline: 14px 6px;
 		border-bottom: 1px solid var(--border);
 	}
 	.lang {
@@ -56,5 +58,6 @@
 		font-size: 0.8125rem;
 		line-height: 1.6;
 		tab-size: 4;
+		text-align: left;
 	}
 </style>

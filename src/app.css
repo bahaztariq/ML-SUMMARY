@@ -1,7 +1,7 @@
 /* =========================================================================
    Design tokens
-   Light is the default; dark follows the OS unless the user picks a theme
-   (data-theme on <html>, set by the theme toggle).
+   Light is the default; dark applies only when the user turns it on
+   (data-theme="dark" on <html>, set by the theme toggle).
    ========================================================================= */
 :root {
 	color-scheme: light;
@@ -62,44 +62,6 @@
 	--nav-h: 56px;
 }
 
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme='light']) {
-		color-scheme: dark;
-		--bg: #0e0e10;
-		--surface: #161618;
-		--surface-2: #1c1c1f;
-		--surface-3: #26262a;
-		--border: #27272a;
-		--border-strong: #3a3a3f;
-		--text: #f4f4f5;
-		--text-2: #a1a1aa;
-		--text-3: #71717a;
-		--accent: #818cf8;
-		--text-on-accent: #0e0e10;
-		--success: #4ade80;
-		--warning: #fbbf24;
-		--danger: #f87171;
-		--color-track-fundamentals: #22d3ee;
-		--color-track-de: #60a5fa;
-		--color-track-ml-core: #34d399;
-		--color-track-models: #a78bfa;
-		--color-track-dl: #fbbf24;
-		--color-track-mlops: #f472b6;
-		--viz-bg: #121214;
-		--viz-grid: rgba(244, 244, 245, 0.06);
-		--viz-axis: rgba(244, 244, 245, 0.25);
-		--viz-1: #818cf8;
-		--viz-2: #34d399;
-		--viz-3: #fbbf24;
-		--viz-4: #f472b6;
-		--viz-5: #22d3ee;
-		--viz-6: #a78bfa;
-		--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-		--shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
-		--shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
-	}
-}
-
 :root[data-theme='dark'] {
 	color-scheme: dark;
 	--bg: #0e0e10;
@@ -134,6 +96,18 @@
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
 	--shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
 	--shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Phones: the top bar has two rows (see TopNav). */
+@media (max-width: 640px) {
+	:root {
+		--nav-h: 93px;
+	}
+}
+
+/* Arabic: a typeface designed for Arabic script, with Inter for Latin runs. */
+:root:lang(ar) {
+	--font-sans: 'IBM Plex Sans Arabic', 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* =========================================================================
@@ -325,4 +299,26 @@ kbd {
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
 	}
+}
+
+/* Code, formulas and canvases always read left-to-right, even on RTL pages. */
+pre,
+code,
+kbd,
+canvas,
+.formula,
+.ltr {
+	direction: ltr;
+	unicode-bidi: isolate;
+}
+
+/* Arabic letters join: tracking and forced capitals break the script, so drop them. */
+:root:lang(ar) :where(*) {
+	letter-spacing: normal !important;
+	text-transform: none !important;
+}
+
+/* Icons that point along the reading direction mirror on RTL pages. */
+:root[dir='rtl'] .flip-rtl {
+	transform: scaleX(-1);
 }

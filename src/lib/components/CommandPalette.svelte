@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { lhref, t } from '#lib/i18n/index.svelte.ts';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { conceptById, trackById } from '#lib/content.ts';
+	import { conceptById, concepts, trackById } from '#lib/content.ts';
 	import { palette } from '#lib/palette.svelte.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { search } from '#lib/search.ts';
@@ -33,7 +33,7 @@
 
 	function choose(c: ConceptMeta) {
 		palette.close();
-		goto(resolve('/concept/[id]', { id: c.id }));
+		goto(lhref(`/concept/${c.id}`));
 	}
 
 	function onKey(e: KeyboardEvent) {
@@ -68,7 +68,7 @@
 {#if palette.isOpen}
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div class="backdrop" onclick={palette.close}>
-		<div class="panel" role="dialog" tabindex="-1" aria-modal="true" aria-label="Search concepts" onclick={(e) => e.stopPropagation()}>
+		<div class="panel" role="dialog" tabindex="-1" aria-modal="true" aria-label={t('nav.searchConcepts')} onclick={(e) => e.stopPropagation()}>
 			<div class="field">
 				<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
 					><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" /><path
@@ -82,7 +82,7 @@
 					bind:this={input}
 					bind:value={query}
 					onkeydown={onKey}
-					placeholder="Search 96 concepts, e.g. “boosting”, “kafka”, “learning_rate”"
+					placeholder={t('palette.placeholder', { n: concepts.length })}
 					role="combobox"
 					aria-expanded="true"
 					aria-controls="palette-list"
@@ -93,7 +93,7 @@
 
 			<div class="list" id="palette-list" role="listbox" bind:this={listEl}>
 				{#if !query.trim() && recent.length}
-					<div class="group">Recently viewed</div>
+					<div class="group">{t('palette.recent')}</div>
 				{/if}
 				{#each results as c, i (c.id)}
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -108,20 +108,20 @@
 					>
 						<span class="dot" style:background={trackById[c.track].color}></span>
 						<span class="name">{c.name}</span>
-						{#if hasExplainer(c.id)}<span class="tag">Interactive</span>{/if}
-						{#if progress.isLearned(c.id)}<span class="check" aria-label="learned">✓</span>{/if}
+						{#if hasExplainer(c.id)}<span class="tag">{t('common.interactive')}</span>{/if}
+						{#if progress.isLearned(c.id)}<span class="check" aria-label={t('common.learned')}>✓</span>{/if}
 						<span class="meta">{trackById[c.track].label}</span>
 					</div>
 				{:else}
 					<div class="empty">
-						{query.trim() ? `No concepts match “${query}”.` : 'Type to search every concept.'}
+						{query.trim() ? t('palette.noMatch', { q: query }) : t('palette.typeToSearch')}
 					</div>
 				{/each}
 			</div>
 
 			<div class="foot">
-				<span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
-				<span><kbd>↵</kbd> to open</span>
+				<span><kbd>↑</kbd> <kbd>↓</kbd> {t('palette.navigate')}</span>
+				<span><kbd>↵</kbd> {t('palette.open')}</span>
 			</div>
 		</div>
 	</div>
@@ -220,7 +220,7 @@
 		font-weight: 700;
 	}
 	.meta {
-		margin-left: auto;
+		margin-inline-start: auto;
 		font-size: 0.8125rem;
 		color: var(--text-3);
 		white-space: nowrap;

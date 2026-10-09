@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import { lhref, t } from '#lib/i18n/index.svelte.ts';
 	import { trackById } from '#lib/content.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { hasExplainer, isInteractive } from '#lib/explainers/registry.ts';
@@ -14,13 +14,13 @@
 	class="card concept"
 	class:compact
 	class:learned
-	href={resolve('/concept/[id]', { id: concept.id })}
+	href={lhref(`/concept/${concept.id}`)}
 	style:--tc={track.color}
 >
 	<div class="top">
 		<span class="track"><span class="dot"></span>{track.label}</span>
 		{#if learned}
-			<span class="check" title="Learned">✓</span>
+			<span class="check" title={t('common.learned')}>✓</span>
 		{/if}
 	</div>
 	<h3>{concept.name}</h3>
@@ -28,11 +28,11 @@
 		<p class="summary">{concept.summary}</p>
 	{/if}
 	<div class="meta">
-		<span class="diff diff-{concept.difficulty.toLowerCase()}">{concept.difficulty}</span>
+		<span class="diff diff-{concept.difficulty.toLowerCase()}">{t(`difficulty.${concept.difficulty}`)}</span>
 		{#if hasExplainer(concept.id)}
-			<span class="tag lesson">▶ Interactive lesson</span>
+			<span class="tag lesson">▶ {t('common.interactiveLesson')}</span>
 		{:else if isInteractive(concept.id)}
-			<span class="tag">Playground</span>
+			<span class="tag">{t('common.playground')}</span>
 		{/if}
 	</div>
 </a>
@@ -52,9 +52,11 @@
 	.concept::before {
 		content: '';
 		position: absolute;
-		inset: 0 auto 0 0;
+		inset-block: 0;
+		inset-inline-start: 0;
 		width: 3px;
-		border-radius: var(--radius) 0 0 var(--radius);
+		border-start-start-radius: var(--radius);
+		border-end-start-radius: var(--radius);
 		background: var(--tc);
 		opacity: 0;
 		transition: opacity 0.15s var(--ease);

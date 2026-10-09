@@ -3,8 +3,16 @@
   `links` maps Mermaid node ids to concept ids; those nodes navigate to the concept.
 -->
 <script module lang="ts">
+	import { i18n, lhref, t } from '#lib/i18n/index.svelte.ts';
 	let mermaidPromise: Promise<typeof import('mermaid').default> | null = null;
 	let counter = 0;
+	/** Mermaid keeps global state (config, ids) while rendering, so renders run one at a time. */
+	let queue: Promise<unknown> = Promise.resolve();
+	function serial<T>(job: () => Promise<T>): Promise<T> {
+		const run = queue.then(job, job);
+		queue = run.catch(() => {});
+		return run;
+	}
 
 	function loadMermaid() {
 		mermaidPromise ??= import('mermaid').then((m) => m.default);
@@ -14,7 +22,6 @@
 
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { theme } from '#lib/theme.svelte.ts';
 
 	interface Props {
@@ -23,7 +30,7 @@
 		highlight?: string;
 		label?: string;
 	}
-	let { source, links = {}, highlight, label = 'Diagram' }: Props = $props();
+	let { source, links = {}, highlight, label = t('common.diagram') }: Props = $props();
 
 	let host = $state<HTMLDivElement>();
 	let status = $state<'loading' | 'ok' | 'error'>('loading');
@@ -51,25 +58,29 @@
 
 	$effect(() => {
 		const el = host;
-		const src = source;
+		// Right-to-left pages read flowcharts right-to-left too.
+		const src = i18n.rtl ? source.replace(/^(\s*(?:flowchart|graph)\s+)LR\b/m, '$1RL') : source;
 		theme.version;
 		if (!el) return;
 		let cancelled = false;
 		status = 'loading';
 		(async () => {
 			try {
-				const mermaid = await loadMermaid();
+				console.log('DBG start');const mermaid = await loadMermaid();console.log('DBG loaded');
 				// Mermaid sizes labels by measuring text, so measure with the final web font.
-				await document.fonts.ready;
-				mermaid.initialize({
-					startOnLoad: false,
-					securityLevel: 'strict',
-					suppressErrorRendering: true,
-					theme: 'base',
-					flowchart: { curve: 'basis', htmlLabels: true, useMaxWidth: true },
-					themeVariables: tokens(el)
+				await document.fonts.ready;console.log('DBG fonts');
+				const svg = await serial(async () => {
+					if (cancelled) return '';
+					mermaid.initialize({
+						startOnLoad: false,
+						securityLevel: 'strict',
+						suppressErrorRendering: true,
+						theme: 'base',
+						flowchart: { curve: 'basis', htmlLabels: true, useMaxWidth: true },
+						themeVariables: tokens(el)
+					});
+					console.log('DBG render');return (await mermaid.render(`mmd-${++counter}`, src)).svg;
 				});
-				const { svg } = await mermaid.render(`mmd-${++counter}`, src);
 				if (cancelled) return;
 				el.innerHTML = svg;
 				wire(el);
@@ -103,7 +114,7 @@
 			if (id && id === highlight) n.classList.add('current');
 			const concept = id ? links[id] : undefined;
 			if (!concept) continue;
-			const href = resolve('/concept/[id]', { id: concept });
+			const href = lhref(`/concept/${concept}`);
 			n.classList.add('link');
 			n.setAttribute('tabindex', '0');
 			n.setAttribute('role', 'link');
@@ -122,10 +133,10 @@
 <figure class="diagram" aria-label={label}>
 	<div class="host" bind:this={host} class:hidden={status !== 'ok'}></div>
 	{#if status === 'loading'}
-		<div class="placeholder">Rendering diagram…</div>
+		<div class="placeholder">{t('common.renderingDiagram')}</div>
 	{:else if status === 'error'}
 		<div class="placeholder error">
-			Diagram could not be rendered.
+			{t('common.diagramError')}
 			<pre>{source}</pre>
 		</div>
 	{/if}
@@ -155,7 +166,7 @@
 		font-size: 0.875rem;
 	}
 	.error pre {
-		text-align: left;
+		text-align: start;
 		margin-top: 12px;
 		font-size: 0.75rem;
 		white-space: pre-wrap;

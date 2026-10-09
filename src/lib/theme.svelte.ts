@@ -1,40 +1,31 @@
 /**
- * Theme preference: 'system' follows the OS; 'light'/'dark' are pinned via data-theme on <html>.
- * `version` bumps whenever the effective colors may have changed, so canvas scenes can redraw.
+ * Theme: light by default; dark only when the user picks it (data-theme="dark" on <html>).
+ * `version` bumps whenever the colors change, so canvas scenes and diagrams can redraw.
  */
-import { browser } from '$app/env';
-
-export type ThemePref = 'system' | 'light' | 'dark';
+export type ThemePref = 'light' | 'dark';
 const KEY = 'ml-hub-theme';
 
 class Theme {
-	pref = $state<ThemePref>('system');
+	pref = $state<ThemePref>('light');
 	version = $state(0);
 
 	load() {
 		try {
-			const t = localStorage.getItem(KEY);
-			if (t === 'light' || t === 'dark') this.pref = t;
+			if (localStorage.getItem(KEY) === 'dark') this.pref = 'dark';
 		} catch {}
-		window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-			if (this.pref === 'system') this.version++;
-		});
 	}
 
 	get isDark() {
-		this.version;
-		if (!browser) return false;
-		if (this.pref !== 'system') return this.pref === 'dark';
-		return window.matchMedia('(prefers-color-scheme: dark)').matches;
+		return this.pref === 'dark';
 	}
 
 	set(pref: ThemePref) {
 		this.pref = pref;
-		if (pref === 'system') delete document.documentElement.dataset.theme;
-		else document.documentElement.dataset.theme = pref;
+		if (pref === 'dark') document.documentElement.dataset.theme = 'dark';
+		else delete document.documentElement.dataset.theme;
 		try {
-			if (pref === 'system') localStorage.removeItem(KEY);
-			else localStorage.setItem(KEY, pref);
+			if (pref === 'dark') localStorage.setItem(KEY, 'dark');
+			else localStorage.removeItem(KEY);
 		} catch {}
 		this.version++;
 	}

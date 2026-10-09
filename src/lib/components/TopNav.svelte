@@ -1,17 +1,23 @@
 <script lang="ts">
+	import { i18n, LANG_INFO, LANGS, lhref, t, unlocalizedPath, type Lang } from '#lib/i18n/index.svelte.ts';
+	import type { UiKey } from '#lib/i18n/ui/en.ts';
 	import { page } from '$app/state';
-	import { resolve } from '$app/paths';
 	import { concepts } from '#lib/content.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { theme } from '#lib/theme.svelte.ts';
 	import { palette } from '#lib/palette.svelte.ts';
 
-	const links = [
-		{ href: '/learn', label: 'Learn' },
-		{ href: '/paths', label: 'Paths' },
-		{ href: '/map', label: 'Map' },
-		{ href: '/tools', label: 'Tools' }
-	] as const;
+	const links: { href: string; key: UiKey; also?: string }[] = [
+		{ href: '/learn', key: 'nav.learn' },
+		{ href: '/roadmap', key: 'nav.roadmap', also: '/paths' },
+		{ href: '/quiz', key: 'nav.quiz' },
+		{ href: '/map', key: 'nav.map' },
+		{ href: '/tools', key: 'nav.tools' }
+	];
+
+	const path = $derived(unlocalizedPath(page.url.pathname));
+	const isActive = (l: (typeof links)[number]) => path.startsWith(l.href) || (!!l.also && path.startsWith(l.also));
+	const short: Record<Lang, string> = { en: 'EN', fr: 'FR', ar: 'ع' };
 
 	const isMac = $derived(typeof navigator !== 'undefined' && /Mac|iP(hone|ad)/.test(navigator.platform));
 	const pct = $derived(Math.round((progress.learned.size / concepts.length) * 100));
@@ -19,7 +25,7 @@
 
 <header class="nav">
 	<div class="container inner">
-		<a href={resolve('/')} class="brand" aria-label="ML Hub home">
+		<a href={lhref('/')} class="brand" aria-label={t('nav.home')}>
 			<span class="logo" aria-hidden="true">
 				<svg viewBox="0 0 24 24" width="20" height="20"
 					><circle cx="6" cy="7" r="2.5" /><circle cx="18" cy="7" r="2.5" /><circle cx="12" cy="17" r="2.5" /><path
@@ -30,32 +36,31 @@
 					/></svg
 				>
 			</span>
-			<span class="brand-name">ML Hub</span>
+			<span class="brand-name">{t('site.name')}</span>
 		</a>
 
-		<nav class="links" aria-label="Main">
+		<nav class="links" aria-label={t('nav.main')}>
 			{#each links as l (l.href)}
-				<a href={resolve(l.href)} class:active={page.url.pathname.startsWith(l.href)}>{l.label}</a>
+				<a href={lhref(l.href)} class:active={isActive(l)}>{t(l.key)}</a>
 			{/each}
 		</nav>
 
 		<div class="actions">
-			<button class="search" onclick={() => palette.open()} aria-label="Search concepts">
+			<button class="search" onclick={() => palette.open()} aria-label={t('nav.searchConcepts')}>
 				<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"
 					><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" /><path
 						d="m20 20-3.5-3.5"
 						stroke="currentColor"
 						stroke-width="2"
 						stroke-linecap="round"
-							stroke-opacity={pct > 0 ? 1 : 0}
 					/></svg
 				>
-				<span class="search-label">Search</span>
+				<span class="search-label">{t('nav.search')}</span>
 				<kbd>{isMac ? '⌘' : 'Ctrl'} K</kbd>
 			</button>
 
 			{#if progress.ready}
-				<a href={resolve('/paths')} class="progress" title="{progress.learned.size} of {concepts.length} concepts learned">
+				<a href={lhref('/roadmap')} class="progress" title={t('nav.learnedOf', { n: progress.learned.size, total: concepts.length })}>
 					<svg viewBox="0 0 36 36" width="22" height="22" aria-hidden="true">
 						<circle cx="18" cy="18" r="15" fill="none" stroke="var(--surface-3)" stroke-width="4" />
 						<circle
@@ -66,6 +71,7 @@
 							stroke="var(--accent)"
 							stroke-width="4"
 							stroke-linecap="round"
+							stroke-opacity={pct > 0 ? 1 : 0}
 							stroke-dasharray="{(pct / 100) * 94.25} 94.25"
 							transform="rotate(-90 18 18)"
 						/>
@@ -74,7 +80,21 @@
 				</a>
 			{/if}
 
-			<button class="btn btn-ghost icon" onclick={() => theme.cycle()} aria-label="Toggle dark mode">
+			<div class="langs" role="group" aria-label={t('nav.language')}>
+				{#each LANGS as l (l)}
+					<a
+						href={lhref(path, l)}
+						hreflang={l}
+						lang={l}
+						class:active={i18n.current === l}
+						aria-current={i18n.current === l ? 'true' : undefined}
+						title={LANG_INFO[l].native}
+						data-sveltekit-reset="false">{short[l]}</a
+					>
+				{/each}
+			</div>
+
+			<button class="btn btn-ghost icon" onclick={() => theme.cycle()} aria-label={t('nav.toggleTheme')}>
 				{#if theme.isDark}
 					<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
 						><circle cx="12" cy="12" r="4.5" fill="currentColor" /><g stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -144,7 +164,7 @@
 		background: var(--surface-2);
 	}
 	.actions {
-		margin-left: auto;
+		margin-inline-start: auto;
 		display: flex;
 		align-items: center;
 		gap: 8px;
@@ -155,7 +175,8 @@
 		gap: 8px;
 		height: 34px;
 		width: 220px;
-		padding: 0 8px 0 10px;
+		padding-block: 0;
+		padding-inline: 10px 8px;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
@@ -167,7 +188,7 @@
 		border-color: var(--border-strong);
 	}
 	.search kbd {
-		margin-left: auto;
+		margin-inline-start: auto;
 	}
 	.progress {
 		display: flex;
@@ -186,6 +207,31 @@
 	.icon {
 		width: 34px;
 		padding: 0;
+	}
+	.langs {
+		display: inline-flex;
+		padding: 2px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		background: var(--surface);
+	}
+	.langs a {
+		display: grid;
+		place-items: center;
+		min-width: 28px;
+		height: 26px;
+		padding: 0 6px;
+		border-radius: 5px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--text-3);
+	}
+	.langs a:hover {
+		color: var(--text);
+	}
+	.langs a.active {
+		background: var(--surface-2);
+		color: var(--text);
 	}
 
 	@media (max-width: 760px) {
@@ -206,6 +252,41 @@
 		}
 		.links a {
 			padding: 6px 7px;
+		}
+	}
+	/* Phones: brand and actions on the first row, the section links scroll on a second row. */
+	@media (max-width: 640px) {
+		.nav {
+			height: auto;
+		}
+		.inner {
+			flex-wrap: wrap;
+			column-gap: 10px;
+			row-gap: 0;
+		}
+		.brand {
+			height: 52px;
+		}
+		.brand-name {
+			display: inline;
+		}
+		.links {
+			order: 3;
+			flex: 0 0 calc(100% + 40px);
+			margin-inline: -20px;
+			padding-inline: 14px;
+			height: 40px;
+			align-items: center;
+			overflow-x: auto;
+			scrollbar-width: none;
+			border-top: 1px solid var(--border);
+		}
+		.links a {
+			white-space: nowrap;
+			padding: 5px 9px;
+		}
+		.actions {
+			gap: 6px;
 		}
 	}
 	@media (max-width: 420px) {
