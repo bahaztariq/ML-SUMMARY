@@ -1,6 +1,6 @@
 # ML Hub: an interactive machine learning knowledge hub
 
-A learning app covering **96 concepts** across **Machine Learning**, **Deep Learning**, **Data Engineering** and **MLOps**. Every concept has an intuition, a diagram, the math, hyperparameters, pros & cons and code, and concepts are linked as a prerequisite graph. Key concepts come with **guided interactive lessons**: narration on one side and a live visualization you drag, tweak and make predictions about on the other.
+A learning app covering **96 concepts** across **Machine Learning**, **Deep Learning**, **Data Engineering** and **MLOps**, in **English, French and Arabic**. Every concept has an intuition, a diagram, the math, hyperparameters, pros & cons and code, and concepts are linked as a prerequisite graph. Every model and evaluation metric comes with a **guided interactive lesson**: narration on one side and a live visualization you drag, tweak and make predictions about on the other.
 
 Built with **SvelteKit 3 (Svelte 5)** and TypeScript, prerendered to a static site.
 
@@ -8,14 +8,16 @@ Built with **SvelteKit 3 (Svelte 5)** and TypeScript, prerendered to a static si
 
 ## Features
 
-- **Interactive lessons**: step-by-step explainers with tasks ("drag a centroid…"), predict-then-reveal quizzes and live numbers in the narration.
+- **31 interactive lessons**: step-by-step explainers for every model and metric, with tasks ("drag a centroid…"), predict-then-reveal questions and live numbers in the narration.
 - **Concept pages**: one page per concept with the lesson (or playground) first, then intuition, when to use it, how it works, math, hyperparameters, trade-offs, code and where it fits in the prerequisite graph.
-- **Learning paths**: six ordered curricula with progress tracking. Concept pages show your position in the path with previous/next links.
+- **Roadmap**: one learning order for all 96 concepts — eight core stages, then three specializations — with progress per stage. Six goal-based paths are focus views of it.
+- **Quiz**: 30 random questions per attempt from a bank of 300+, points by difficulty, streak bonuses, history, best score and "retry my mistakes".
 - **Learn**: browse every concept by track, difficulty and interactivity.
 - **Map**: the concept taxonomy, prerequisite graphs, a knowledge tree and pipeline diagrams.
 - **Tools**: the "Which model?" wizard, a confusion-matrix metrics lab and side-by-side concept comparison.
 - **Search**: press `⌘K` / `Ctrl+K` (or `/`) anywhere.
-- Light and dark themes. Progress is saved in your browser.
+- **English, French and Arabic** (right-to-left), at `/`, `/fr` and `/ar`.
+- Light (default) and dark themes. Progress and quiz history are saved in your browser (localStorage); there is no backend.
 
 ---
 
@@ -44,7 +46,11 @@ npm run check        # type-check
 npm run validate     # content checks
 ```
 
-The original vanilla-JS app is kept in `legacy/` for reference while its last features are ported. Run `npm run legacy` and open http://localhost:4173/legacy/.
+The original vanilla-JS app is kept in `legacy/` for reference. Run `npm run legacy` and open http://localhost:4173/legacy/.
+
+### Deploying to GitHub Pages
+
+`.github/workflows/deploy.yml` validates, tests, builds and publishes the site on every push to `main`. In the repository settings, set **Pages → Source** to **GitHub Actions** once. The workflow builds with `BASE_PATH=/<repo-name>`, so the site is served from `https://<user>.github.io/<repo-name>/`.
 
 ---
 
@@ -54,13 +60,18 @@ The original vanilla-JS app is kept in `legacy/` for reference while its last fe
 ML-SUMMARY/
 ├── content/                    # All learning content, plain JS data (no UI code)
 │   ├── index.js                # Concept registry: imports every concept
-│   ├── tracks.js · paths.js    # Tracks and learning paths
+│   ├── tracks.js · paths.js    # Tracks and goal paths
+│   ├── roadmap.js              # The unified roadmap (every concept once, in order)
+│   ├── quiz/                   # Quiz question bank (en/fr/ar side by side)
+│   ├── i18n/<lang>/            # French and Arabic translations of the content
 │   └── <track>/<id>.js         # One file per concept
 ├── src/
 │   ├── app.css                 # Design tokens (light/dark) and shared primitives
-│   ├── routes/                 # Pages: / · /learn · /concept/[id] · /paths · /map · /tools
+│   ├── routes/[[lang=lang]]/   # Pages, optionally under /fr or /ar: / · /learn · /concept/[id] · /roadmap · /quiz · /map · /tools
 │   └── lib/
-│       ├── content.ts          # Typed access to content/ plus graph helpers
+│       ├── content.ts          # Typed, localized access to content/ plus graph helpers
+│       ├── i18n/               # Current language, t(), lhref(), UI dictionaries (en/fr/ar)
+│       ├── quiz/               # Quiz engine (drawing, scoring), localStorage store, UI
 │       ├── progress.svelte.ts  # Learned/recent state (localStorage)
 │       ├── components/         # Nav, ⌘K palette, cards, Mermaid diagram, code block
 │       ├── explainers/         # Guided lessons
@@ -68,7 +79,8 @@ ML-SUMMARY/
 │       │   ├── registry.ts     # Which concepts have a lesson / playground
 │       │   └── kmeans/ …       # One folder per lesson
 │       └── viz/                # Canvas toolkit, controls, legacy playgrounds
-├── tools/validate.js           # Content checks: ids, links, cycles, paths
+├── docs/TRANSLATING.md         # How translations are organised and written
+├── tools/validate.js           # Content checks: ids, links, cycles, roadmap order, quiz bank
 └── legacy/                     # Original app (to be removed)
 ```
 
@@ -124,3 +136,9 @@ Each lesson is a folder in `src/lib/explainers/`, following `kmeans/`:
 A step has a `title`, a `body` (narration, a string or `(state) => string` for live values; supports `**bold**`, `` `code` ``, lists and `[label](concept:id)` links), an `enter(state)` that sets the scene up, and optionally a `task` (an interactive goal) or a `quiz` whose `reveal` changes the scene after the learner answers. Moving to step *i* replays `init()` and every `enter()` up to *i*, so each step looks the same however you reach it. Use seeded randomness (`mulberry32`) to keep it deterministic.
 
 Register the lesson in `src/lib/explainers/registry.ts` under the concept's id.
+
+---
+
+## Translations
+
+See [docs/TRANSLATING.md](docs/TRANSLATING.md). Anything without a translation falls back to English, so partial work never breaks a page.
