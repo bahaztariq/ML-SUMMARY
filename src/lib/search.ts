@@ -3,6 +3,7 @@
  * Every query word must match somewhere; matches in the name rank highest.
  */
 import { concepts } from './content.ts';
+import { i18n } from './i18n/index.svelte.ts';
 import type { ConceptMeta } from './types.ts';
 
 interface Entry {
@@ -12,18 +13,27 @@ interface Entry {
 	body: string;
 }
 
-const index: Entry[] = concepts.map((c) => ({
-	concept: c,
-	name: c.name.toLowerCase(),
-	meta: [c.id, c.category, ...(c.task ?? [])].join(' ').toLowerCase(),
-	body: [c.summary, c.searchText].join(' ').toLowerCase()
-}));
+/** Built lazily per language, since names and summaries are localized. */
+const indexes = new Map<string, Entry[]>();
+function getIndex(): Entry[] {
+	let index = indexes.get(i18n.current);
+	if (!index) {
+		index = concepts.map((c) => ({
+			concept: c,
+			name: c.name.toLowerCase(),
+			meta: [c.id, c.category, ...(c.task ?? [])].join(' ').toLowerCase(),
+			body: [c.summary, c.searchText].join(' ').toLowerCase()
+		}));
+		indexes.set(i18n.current, index);
+	}
+	return index;
+}
 
 export function search(query: string, limit = 20): ConceptMeta[] {
 	const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
 	if (!words.length) return [];
 	const scored: [number, Entry][] = [];
-	for (const e of index) {
+	for (const e of getIndex()) {
 		let score = 0;
 		let ok = true;
 		for (const w of words) {

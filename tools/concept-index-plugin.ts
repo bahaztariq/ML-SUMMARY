@@ -3,6 +3,7 @@
  * graph links and a search string) built from content/ at build time. Pages that only list or
  * search concepts import this instead of the full knowledge base, which stays server-side.
  */
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Plugin, ViteDevServer } from 'vite';
@@ -28,6 +29,17 @@ export function toMeta(c: Raw) {
 	};
 }
 
+const TRANSLATED_LANGS = ['fr', 'ar'];
+
+/** The translatable fields of the index, from content/i18n/<lang>/<track>/<id>.js. */
+function toMetaText(t: Raw) {
+	const out: Raw = {};
+	for (const k of ['name', 'category', 'task', 'summary'] as const) if (t[k] !== undefined) out[k] = t[k];
+	const search = [t.intuition, ...(t.parameters ?? []).map((p: Raw) => p?.name)].filter(Boolean).join(' ');
+	if (search) out.searchText = search;
+	return out;
+}
+
 export function conceptIndex(): Plugin {
 	let server: ViteDevServer | undefined;
 	return {
@@ -42,8 +54,17 @@ export function conceptIndex(): Plugin {
 			if (id !== RESOLVED) return;
 			const entry = path.join(CONTENT_DIR, 'index.js');
 			// In dev, load through Vite so edits to any concept file are picked up.
-			const mod = server ? await server.ssrLoadModule(entry) : await import(pathToFileURL(entry).href);
-			return `export default ${JSON.stringify(mod.concepts.map(toMeta))};`;
+			const load = (file: string) => (server ? server.ssrLoadModule(file) : import(pathToFileURL(file).href));
+			const mod = await load(entry);
+			const translations: Record<string, Record<string, Raw>> = {};
+			for (const lang of TRANSLATED_LANGS) {
+				translations[lang] = {};
+				for (const c of mod.concepts as Raw[]) {
+					const file = path.join(CONTENT_DIR, 'i18n', lang, c.track, `${c.id}.js`);
+					if (existsSync(file)) translations[lang][c.id] = toMetaText((await load(file)).default);
+				}
+			}
+			return `export default ${JSON.stringify(mod.concepts.map(toMeta))};\nexport const translations = ${JSON.stringify(translations)};`;
 		},
 		hotUpdate({ file }) {
 			if (!file.startsWith(CONTENT_DIR + path.sep)) return;

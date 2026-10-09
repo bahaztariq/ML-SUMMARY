@@ -1,18 +1,123 @@
 /**
  * Typed access to content/ plus graph helpers, built on the lightweight concept index.
  * Full concepts (code, math, diagrams…) live in content-full.ts and are only loaded where needed.
+ *
+ * Text fields (concept names and summaries, track labels, path and stage titles) are getters
+ * that read the current language, so components re-render when the language changes without
+ * having to localize anything themselves. Translations live in content/i18n/<lang>/.
  */
-import index from 'virtual:concept-index';
+import index, { translations } from 'virtual:concept-index';
 import { tracks as rawTracks } from '#content/tracks.js';
 import { learningPaths as rawPaths } from '#content/paths.js';
-import type { ConceptMeta, LearningPath, Track, TrackId } from './types.ts';
+import { roadmap as rawRoadmap } from '#content/roadmap.js';
+import { i18n } from './i18n/index.svelte.ts';
+import type { ConceptMeta, LearningPath, RoadmapStage, Track, TrackId } from './types.ts';
 
-export const concepts: ConceptMeta[] = index;
+/** Translations of site-wide texts: content/i18n/<lang>/site.js. */
+export interface SiteText {
+	tracks?: Partial<Record<TrackId, string>>;
+	paths?: Record<string, { title?: string; goal?: string }>;
+	roadmap?: Record<string, { title?: string; goal?: string; milestones?: string[] }>;
+	[section: string]: unknown;
+}
+const siteTexts = import.meta.glob<SiteText>('/content/i18n/*/site.js', { eager: true, import: 'default' });
+
+/** The current language's site texts, or undefined for English / missing translations. */
+export function siteText(): SiteText | undefined {
+	return i18n.current === 'en' ? undefined : siteTexts[`/content/i18n/${i18n.current}/site.js`];
+}
+
+function localizeMeta(raw: ConceptMeta): ConceptMeta {
+	const tr = () => (i18n.current === 'en' ? undefined : translations[i18n.current]?.[raw.id]);
+	return {
+		id: raw.id,
+		track: raw.track,
+		difficulty: raw.difficulty,
+		prerequisites: raw.prerequisites,
+		related: raw.related,
+		get name() {
+			return tr()?.name ?? raw.name;
+		},
+		get category() {
+			return tr()?.category ?? raw.category;
+		},
+		get task() {
+			return tr()?.task ?? raw.task;
+		},
+		get summary() {
+			return tr()?.summary ?? raw.summary;
+		},
+		get searchText() {
+			return tr()?.searchText ?? raw.searchText;
+		}
+	};
+}
+
+export const concepts: ConceptMeta[] = index.map(localizeMeta);
 export const conceptById = new Map(concepts.map((c) => [c.id, c]));
-export const tracks = rawTracks as Track[];
+
+export const tracks: Track[] = (rawTracks as Track[]).map((t) => ({
+	id: t.id,
+	icon: t.icon,
+	color: t.color,
+	get label() {
+		return siteText()?.tracks?.[t.id] ?? t.label;
+	}
+}));
 export const trackById = Object.fromEntries(tracks.map((t) => [t.id, t])) as Record<TrackId, Track>;
-export const learningPaths = rawPaths as LearningPath[];
+
+export const learningPaths: LearningPath[] = (rawPaths as LearningPath[]).map((p) => ({
+	id: p.id,
+	icon: p.icon,
+	steps: p.steps,
+	get title() {
+		return siteText()?.paths?.[p.id]?.title ?? p.title;
+	},
+	get goal() {
+		return siteText()?.paths?.[p.id]?.goal ?? p.goal;
+	}
+}));
 export const pathById = new Map(learningPaths.map((p) => [p.id, p]));
+
+export const roadmap: RoadmapStage[] = (rawRoadmap as RoadmapStage[]).map((st) => ({
+	id: st.id,
+	icon: st.icon,
+	kind: st.kind,
+	get title() {
+		return siteText()?.roadmap?.[st.id]?.title ?? st.title;
+	},
+	get goal() {
+		return siteText()?.roadmap?.[st.id]?.goal ?? st.goal;
+	},
+	milestones: st.milestones.map((m, i) => ({
+		steps: m.steps,
+		get title() {
+			return siteText()?.roadmap?.[st.id]?.milestones?.[i] ?? m.title;
+		}
+	}))
+}));
+/** Every concept id in roadmap order (core stages, then specializations). */
+export const roadmapOrder = roadmap.flatMap((s) => s.milestones.flatMap((m) => m.steps));
+export const stageConceptIds = (stage: RoadmapStage) => stage.milestones.flatMap((m) => m.steps);
+
+/** Where a concept sits in the roadmap, with its neighbours inside the same stage. */
+export function roadmapPosition(id: string) {
+	const stageIndex = roadmap.findIndex((s) => stageConceptIds(s).includes(id));
+	if (stageIndex === -1) return null;
+	const stage = roadmap[stageIndex];
+	const ids = stageConceptIds(stage);
+	const i = ids.indexOf(id);
+	const milestone = stage.milestones.find((m) => m.steps.includes(id))!;
+	return {
+		stage,
+		stageIndex,
+		milestone,
+		index: i,
+		size: ids.length,
+		prev: i > 0 ? conceptById.get(ids[i - 1]) : undefined,
+		next: i < ids.length - 1 ? conceptById.get(ids[i + 1]) : undefined
+	};
+}
 
 const dependents = new Map<string, ConceptMeta[]>();
 for (const c of concepts) {

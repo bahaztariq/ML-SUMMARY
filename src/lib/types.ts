@@ -52,3 +52,17 @@ export interface LearningPath {
 	goal: string;
 	steps: string[];
 }
+
+export interface Milestone {
+	title: string;
+	steps: string[];
+}
+
+export interface RoadmapStage {
+	id: string;
+	title: string;
+	icon: string;
+	goal: string;
+	kind: 'core' | 'specialization';
+	milestones: Milestone[];
+}
