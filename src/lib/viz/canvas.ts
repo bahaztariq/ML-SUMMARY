@@ -12,6 +12,10 @@ export interface VizTheme {
 	text3: string;
 	surface: string;
 	accent: string;
+	/** Error / negative highlight. */
+	danger: string;
+	/** Positive / correct highlight. */
+	success: string;
 	series: string[];
 	mono: string;
 	sans: string;
@@ -30,6 +34,8 @@ export function readTheme(el: Element): VizTheme {
 		text3: v('--text-3', '#8a8a93'),
 		surface: v('--surface-2', '#f4f4f2'),
 		accent: v('--accent', '#4f46e5'),
+		danger: v('--danger', '#dc2626'),
+		success: v('--success', '#16a34a'),
 		series: [1, 2, 3, 4, 5, 6].map((i) => v(`--viz-${i}`, '#4f46e5')),
 		mono: v('--font-mono', 'monospace'),
 		sans: v('--font-sans', 'sans-serif')

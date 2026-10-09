@@ -1,4 +1,5 @@
-import { resolve } from '$app/paths';
+import { lhref } from '#lib/i18n/index.svelte.ts';
+
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -29,6 +30,6 @@ function inline(text: string): string {
 		.replace(/\*([^*]+)\*/g, '<em>$1</em>')
 		.replace(
 			/\[([^\]]+)\]\(concept:([a-z0-9-]+)\)/g,
-			(_, label, id) => `<a class="concept-link" href="${resolve('/concept/[id]', { id })}">${label}</a>`
+			(_, label, id) => `<a class="concept-link" href="${lhref(`/concept/${id}`)}">${label}</a>`
 		);
 }
