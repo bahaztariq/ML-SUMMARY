@@ -1,19 +1,88 @@
 <script lang="ts">
+	import { i18n, lhref, local, t } from '#lib/i18n/index.svelte.ts';
 	import { browser } from '$app/env';
-	import { resolve } from '$app/paths';
 	import { conceptById, getConcepts } from '#lib/content.ts';
-	import { isQuestion, treeToMermaid, walk } from '#lib/tools/wizard.ts';
+	import { isQuestion, treeFor, treeToMermaid, walk } from '#lib/tools/wizard.ts';
 	import ConceptCard from '#lib/components/ConceptCard.svelte';
 	import Diagram from '#lib/components/Diagram.svelte';
+
+	// English is the source; its keys type the other languages.
+	const en = {
+		title: 'Which model?',
+		description: 'Answer a few questions about your data and goal, and get the machine learning models and concepts that fit.',
+		tools: 'Tools',
+		heading: 'Which model should I use?',
+		lead: 'Answer a few questions and get the concepts that fit your problem.',
+		answers: 'Your answers',
+		start: 'Start',
+		question: 'Question {n}',
+		recommended: 'Recommended for you',
+		startWith: 'Start with {name}',
+		theseConcepts: 'these concepts',
+		topPick: 'Top pick',
+		changeLast: 'Change last answer',
+		startOver: 'Start over',
+		treeTitle: 'The whole decision tree',
+		treeLead: 'Every question and answer at once. Click a recommendation box to open its top concept.',
+		hideTree: 'Hide tree',
+		showTree: 'Show full tree',
+		treeLabel: 'Model selection decision tree'
+	};
+	const L = local({
+		en,
+		fr: {
+			title: 'Quel modèle\u00a0?',
+			description: 'Répondez à quelques questions sur vos données et votre objectif, et obtenez les modèles et concepts d’apprentissage automatique adaptés.',
+			tools: 'Outils',
+			heading: 'Quel modèle choisir\u00a0?',
+			lead: 'Répondez à quelques questions et obtenez les concepts adaptés à votre problème.',
+			answers: 'Vos réponses',
+			start: 'Début',
+			question: 'Question {n}',
+			recommended: 'Recommandé pour vous',
+			startWith: 'Commencez par {name}',
+			theseConcepts: 'ces concepts',
+			topPick: 'Premier choix',
+			changeLast: 'Modifier la dernière réponse',
+			startOver: 'Recommencer',
+			treeTitle: 'L’arbre de décision complet',
+			treeLead: 'Toutes les questions et réponses d’un coup d’œil. Cliquez sur une recommandation pour ouvrir son concept principal.',
+			hideTree: 'Masquer l’arbre',
+			showTree: 'Afficher l’arbre complet',
+			treeLabel: 'Arbre de décision pour choisir un modèle'
+		},
+		ar: {
+			title: 'أي نموذج؟',
+			description: 'أجب عن بضعة أسئلة حول بياناتك وهدفك، واحصل على نماذج ومفاهيم التعلم الآلي المناسبة.',
+			tools: 'الأدوات',
+			heading: 'أي نموذج يجب أن أستخدم؟',
+			lead: 'أجب عن بضعة أسئلة واحصل على المفاهيم التي تناسب مشكلتك.',
+			answers: 'إجاباتك',
+			start: 'البداية',
+			question: 'السؤال {n}',
+			recommended: 'موصى به لك',
+			startWith: 'ابدأ بـ{name}',
+			theseConcepts: 'هذه المفاهيم',
+			topPick: 'الخيار الأول',
+			changeLast: 'تغيير الإجابة الأخيرة',
+			startOver: 'البدء من جديد',
+			treeTitle: 'شجرة القرار كاملة',
+			treeLead: 'كل الأسئلة والإجابات دفعة واحدة. انقر على مربع توصية لفتح مفهومه الأول.',
+			hideTree: 'إخفاء الشجرة',
+			showTree: 'عرض الشجرة كاملة',
+			treeLabel: 'شجرة قرار اختيار النموذج'
+		}
+	});
 
 	let choices = $state<number[]>([]);
 	let showTree = $state(false);
 
-	const pos = $derived(walk(choices));
+	const tree = $derived(treeFor(i18n.current));
+	const pos = $derived(walk(choices, tree));
 	const question = $derived(isQuestion(pos.node) ? pos.node : null);
 	const result = $derived(isQuestion(pos.node) ? null : pos.node);
 	const picks = $derived(result ? getConcepts(result.result) : []);
-	const diagram = treeToMermaid((id) => conceptById.get(id)?.name);
+	const diagram = $derived(treeToMermaid((id) => conceptById.get(id)?.name, tree));
 
 	function choose(i: number) {
 		choices = [...choices, i];
@@ -24,8 +93,8 @@
 
 	function onkeydown(e: KeyboardEvent) {
 		if (!question || e.metaKey || e.ctrlKey || e.altKey) return;
-		const t = e.target as HTMLElement | null;
-		if (t?.closest('input, textarea, select, [contenteditable]')) return;
+		const target = e.target as HTMLElement | null;
+		if (target?.closest('input, textarea, select, [contenteditable]')) return;
 		const n = Number(e.key);
 		if (Number.isInteger(n) && n >= 1 && n <= question.options.length) {
 			e.preventDefault();
@@ -38,20 +107,23 @@
 </script>
 
 <svelte:window {onkeydown} />
-<svelte:head><title>Which model? · ML Hub</title></svelte:head>
+<svelte:head>
+	<title>{L('title')} · {t('site.name')}</title>
+	<meta name="description" content={L('description')} />
+</svelte:head>
 
 <div class="container page">
-	<a class="back" href={resolve('/tools')}>← Tools</a>
+	<a class="back" href={lhref('/tools')}><span aria-hidden="true">{t('common.arrowBack')}</span> {L('tools')}</a>
 	<header class="head">
-		<h1>Which model should I use?</h1>
-		<p class="muted">Answer a few questions and get the concepts that fit your problem.</p>
+		<h1>{L('heading')}</h1>
+		<p class="muted">{L('lead')}</p>
 	</header>
 
 	<section class="wizard card" aria-live="polite">
-		<nav class="crumbs" aria-label="Your answers">
-			<button class="crumb" class:current={choices.length === 0} onclick={() => goTo(0)}>Start</button>
+		<nav class="crumbs" aria-label={L('answers')}>
+			<button class="crumb" class:current={choices.length === 0} onclick={() => goTo(0)}>{L('start')}</button>
 			{#each pos.crumbs as c, i (i)}
-				<span class="sep" aria-hidden="true">›</span>
+				<span class="sep" aria-hidden="true">{i18n.rtl ? '‹' : '›'}</span>
 				<button class="crumb" class:current={i === pos.crumbs.length - 1 && !question} title={c.question} onclick={() => goTo(i)}
 					>{c.answer}</button
 				>
@@ -61,38 +133,42 @@
 		{#if question}
 			{#key pos.key}
 				<div class="step">
-					<span class="eyebrow">Question {pos.crumbs.length + 1}</span>
+					<span class="eyebrow">{L('question', { n: pos.crumbs.length + 1 })}</span>
 					<h2>{question.q}</h2>
 					<div class="options">
 						{#each question.options as o, i (o.next + i)}
 							<button class="option" onclick={() => choose(i)}>
 								<kbd aria-hidden="true">{i + 1}</kbd>
 								<span>{o.label}</span>
-								<span class="arrow" aria-hidden="true">→</span>
+								<span class="arrow" aria-hidden="true">{t('common.arrowForward')}</span>
 							</button>
 						{/each}
 					</div>
 					{#if choices.length}
-						<button class="btn btn-ghost btn-sm" onclick={() => goTo(choices.length - 1)}>← Back</button>
+						<button class="btn btn-ghost btn-sm" onclick={() => goTo(choices.length - 1)}
+							><span aria-hidden="true">{t('common.arrowBack')}</span> {t('common.back')}</button
+						>
 					{/if}
 				</div>
 			{/key}
 		{:else if result}
 			<div class="step">
-				<span class="eyebrow">Recommended for you</span>
-				<h2>Start with {picks[0]?.name ?? 'these concepts'}</h2>
+				<span class="eyebrow">{L('recommended')}</span>
+				<h2>{L('startWith', { name: picks[0]?.name ?? L('theseConcepts') })}</h2>
 				<p class="note">{result.note}</p>
 				<div class="results">
 					{#each picks as c, i (c.id)}
 						<div class="pick" class:top={i === 0}>
-							{#if i === 0}<span class="badge">Top pick</span>{/if}
+							{#if i === 0}<span class="badge">{L('topPick')}</span>{/if}
 							<ConceptCard concept={c} />
 						</div>
 					{/each}
 				</div>
 				<div class="actions">
-					<button class="btn" onclick={() => goTo(choices.length - 1)}>← Change last answer</button>
-					<button class="btn btn-primary" onclick={() => goTo(0)}>↺ Start over</button>
+					<button class="btn" onclick={() => goTo(choices.length - 1)}
+						><span aria-hidden="true">{t('common.arrowBack')}</span> {L('changeLast')}</button
+					>
+					<button class="btn btn-primary" onclick={() => goTo(0)}><span aria-hidden="true">↺</span> {L('startOver')}</button>
 				</div>
 			</div>
 		{/if}
@@ -103,15 +179,15 @@
 	<section class="tree">
 		<div class="tree-head">
 			<div>
-				<h2>The whole decision tree</h2>
-				<p class="muted">Every question and answer at once. Click a recommendation box to open its top concept.</p>
+				<h2>{L('treeTitle')}</h2>
+				<p class="muted">{L('treeLead')}</p>
 			</div>
 			<button class="btn" aria-expanded={showTree} onclick={() => (showTree = !showTree)}>
-				{showTree ? 'Hide tree' : 'Show full tree'}
+				{showTree ? L('hideTree') : L('showTree')}
 			</button>
 		</div>
 		{#if browser && showTree}
-			<Diagram source={diagram.source} links={diagram.links} highlight={diagram.nodeId(pos.key)} label="Model selection decision tree" />
+			<Diagram source={diagram.source} links={diagram.links} highlight={diagram.nodeId(pos.key)} label={L('treeLabel')} />
 		{/if}
 	</section>
 </div>
@@ -202,7 +278,7 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
 		background: var(--surface);
-		text-align: left;
+		text-align: start;
 		font-size: 0.975rem;
 		font-weight: 550;
 		cursor: pointer;
@@ -227,11 +303,15 @@
 		color: var(--accent);
 		transform: translateX(2px);
 	}
+	:global([dir='rtl']) .option:hover .arrow {
+		transform: translateX(-2px);
+	}
 	.note {
 		max-width: 62ch;
 		padding: 12px 14px;
-		border-left: 3px solid var(--accent);
-		border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+		border-inline-start: 3px solid var(--accent);
+		border-start-end-radius: var(--radius-sm);
+		border-end-end-radius: var(--radius-sm);
 		background: var(--accent-soft);
 		color: var(--text);
 		font-size: 0.925rem;
@@ -253,7 +333,7 @@
 	.badge {
 		position: absolute;
 		top: -9px;
-		right: 12px;
+		inset-inline-end: 12px;
 		z-index: 1;
 		padding: 1px 8px;
 		border-radius: var(--radius-full);

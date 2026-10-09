@@ -34,7 +34,7 @@ export default {
       type: "string",
       default: "Mode",
       impact: "Replaces NaN with the most frequent value. Works for both numerical and categorical.",
-      tuningTip: "The only strategy that works for categorical string features."
+      tuningTip: "The usual choice for categorical string features (strategy=\"constant\" also works on strings; mean and median do not)."
     },
     {
       name: "strategy='constant'",

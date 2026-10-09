@@ -1,13 +1,46 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import { lhref, local, t } from '#lib/i18n/index.svelte.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { knowledgeTree } from '#lib/map/graphs.ts';
+	import type { UiKey } from '#lib/i18n/ui/en.ts';
 
-	const tree = knowledgeTree();
-	const keys = tree.flatMap((t) => [t.track.id, ...t.categories.map((c) => `${t.track.id}/${c.name}`)]);
+	// English is the source; its keys type the other languages.
+	const en = {
+		title: 'Knowledge tree',
+		description: 'Every concept organised by track and category, with your learning progress.',
+		intro: 'Every concept, organised by track and category, with your progress alongside. Use it as a checklist: collapse what you have covered and see what is left.',
+		collapseAll: 'Collapse all',
+		expandAll: 'Expand all',
+		learned: 'Learned'
+	};
+	const L = local({
+		en,
+		fr: {
+			title: 'Arbre des connaissances',
+			description: 'Tous les concepts classés par parcours et par catégorie, avec votre progression.',
+			intro: 'Tous les concepts, classés par parcours et par catégorie, avec votre progression à côté. Utilisez-le comme une liste de contrôle\u00a0: repliez ce que vous avez couvert et voyez ce qui reste.',
+			collapseAll: 'Tout replier',
+			expandAll: 'Tout déplier',
+			learned: 'Appris'
+		},
+		ar: {
+			title: 'شجرة المعرفة',
+			description: 'كل المفاهيم مرتبة حسب المسار والفئة، مع تقدّمك في التعلّم.',
+			intro: 'كل المفاهيم مرتبة حسب المسار والفئة، مع تقدّمك بجانبها. استخدمها كقائمة مراجعة: اطوِ ما أنهيته وشاهد ما تبقّى.',
+			collapseAll: 'طيّ الكل',
+			expandAll: 'توسيع الكل',
+			learned: 'تم تعلّمه'
+		}
+	});
 
-	let open = $state<Record<string, boolean>>(Object.fromEntries(keys.map((k) => [k, true])));
-	const allOpen = $derived(keys.every((k) => open[k]));
+	// Category names are localized getters: rebuild the tree when the language changes.
+	const tree = $derived(knowledgeTree());
+	// Open state is keyed by track and category position, so it survives a language switch.
+	const keys = $derived(tree.flatMap((tt) => [tt.track.id, ...tt.categories.map((_, i) => `${tt.track.id}/${i}`)]));
+
+	let open = $state<Record<string, boolean>>({});
+	const isOpen = (k: string) => open[k] ?? true;
+	const allOpen = $derived(keys.every(isOpen));
 
 	function setAll(value: boolean) {
 		for (const k of keys) open[k] = value;
@@ -17,39 +50,36 @@
 </script>
 
 <svelte:head>
-	<title>Knowledge tree · Map · ML Hub</title>
-	<meta name="description" content="Every concept organised by track and category, with your learning progress." />
+	<title>{L('title')} · {t('nav.map')} · {t('site.name')}</title>
+	<meta name="description" content={L('description')} />
 </svelte:head>
 
 <section>
 	<div class="intro">
-		<h2>Knowledge tree</h2>
-		<p>
-			Every concept, organised by track and category, with your progress alongside. Use it as a checklist: collapse
-			what you have covered and see what is left.
-		</p>
+		<h2>{L('title')}</h2>
+		<p>{L('intro')}</p>
 	</div>
 
 	<div class="bar">
 		<button class="btn btn-sm" onclick={() => setAll(!allOpen)} aria-pressed={allOpen}>
-			{allOpen ? 'Collapse all' : 'Expand all'}
+			{allOpen ? L('collapseAll') : L('expandAll')}
 		</button>
 	</div>
 
 	<ul class="tree">
-		{#each tree as t (t.track.id)}
-			<li style:--tc={t.track.color}>
-				<details bind:open={open[t.track.id]}>
+		{#each tree as tt (tt.track.id)}
+			<li style:--tc={tt.track.color}>
+				<details bind:open={() => isOpen(tt.track.id), (v) => (open[tt.track.id] = v)}>
 					<summary class="track">
 						<span class="dot"></span>
-						<span class="name">{t.track.label}</span>
-						<span class="count">{count(t.concepts)}/{t.concepts.length}</span>
+						<span class="name">{tt.track.label}</span>
+						<span class="count">{count(tt.concepts)}/{tt.concepts.length}</span>
 					</summary>
 					<ul>
-						{#each t.categories as cat (cat.name)}
-							{@const key = `${t.track.id}/${cat.name}`}
+						{#each tt.categories as cat, ci (ci)}
+							{@const key = `${tt.track.id}/${ci}`}
 							<li>
-								<details bind:open={open[key]}>
+								<details bind:open={() => isOpen(key), (v) => (open[key] = v)}>
 									<summary class="category">
 										<span class="name">{cat.name}</span>
 										<span class="count">{count(cat.items)}/{cat.items.length}</span>
@@ -58,10 +88,10 @@
 										{#each cat.items as c (c.id)}
 											{@const learned = progress.isLearned(c.id)}
 											<li>
-												<a href={resolve('/concept/[id]', { id: c.id })} class:learned>
-													<span class="check" aria-label={learned ? 'Learned' : undefined}>{learned ? '✓' : ''}</span>
+												<a href={lhref(`/concept/${c.id}`)} class:learned>
+													<span class="check" aria-label={learned ? L('learned') : undefined}>{learned ? '✓' : ''}</span>
 													<span class="name">{c.name}</span>
-													<span class="diff diff-{c.difficulty.toLowerCase()}">{c.difficulty}</span>
+													<span class="diff diff-{c.difficulty.toLowerCase()}">{t(`difficulty.${c.difficulty}` as UiKey)}</span>
 												</a>
 											</li>
 										{/each}
@@ -121,6 +151,10 @@
 		transform: rotate(-45deg);
 		transition: transform 0.15s var(--ease);
 	}
+	/* Closed chevrons point toward the reading direction: › in LTR, ‹ in RTL. */
+	:global([dir='rtl']) summary::before {
+		transform: rotate(135deg);
+	}
 	details[open] > summary::before {
 		transform: rotate(45deg);
 	}
@@ -139,7 +173,7 @@
 		background: var(--tc);
 	}
 	.count {
-		margin-left: auto;
+		margin-inline-start: auto;
 		font-size: 0.8125rem;
 		font-weight: 500;
 		color: var(--text-3);
@@ -157,9 +191,10 @@
 		color: var(--text-2);
 	}
 	.leaves {
-		margin: 0 0 6px 21px;
-		padding-left: 10px;
-		border-left: 1px solid var(--border);
+		margin-block: 0 6px;
+		margin-inline: 21px 0;
+		padding-inline-start: 10px;
+		border-inline-start: 1px solid var(--border);
 	}
 	.leaves a {
 		display: flex;

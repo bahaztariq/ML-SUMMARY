@@ -3,6 +3,7 @@
  * A wizard position is the list of option indexes chosen so far, starting at the tree's start node.
  */
 import { decisionTree as rawTree, decisionTreeStart } from '#content/decision-tree.js';
+import type { Lang } from '#lib/i18n/index.svelte.ts';
 
 export interface QuestionNode {
 	q: string;
@@ -19,6 +20,39 @@ export const tree = rawTree as DecisionTree;
 export const startKey: string = decisionTreeStart;
 
 export const isQuestion = (n: DecisionNode): n is QuestionNode => 'q' in n;
+
+/**
+ * Translations: content/i18n/<lang>/decision-tree.js, keyed by node id.
+ * Questions carry `q` and `options` (labels, same order); results carry `note`.
+ */
+export type TreeText = Record<string, { q?: string; options?: string[]; note?: string }>;
+const treeTexts = import.meta.glob<TreeText>('/content/i18n/*/decision-tree.js', { eager: true, import: 'default' });
+
+/** Apply a translation to a tree: same keys, links and concept ids; only texts change. */
+export function translateTree(text: TreeText | undefined, t: DecisionTree = tree): DecisionTree {
+	if (!text) return t;
+	return Object.fromEntries(
+		Object.entries(t).map(([key, node]): [string, DecisionNode] => {
+			const tr = text[key];
+			if (!tr) return [key, node];
+			if (isQuestion(node))
+				return [
+					key,
+					{ q: tr.q ?? node.q, options: node.options.map((o, i) => ({ label: tr.options?.[i] ?? o.label, next: o.next })) }
+				];
+			return [key, { result: node.result, note: tr.note ?? node.note }];
+		})
+	);
+}
+
+const localized = new Map<Lang, DecisionTree>();
+/** The decision tree in the given language (English texts where a translation is missing). */
+export function treeFor(lang: Lang): DecisionTree {
+	if (lang === 'en') return tree;
+	let t = localized.get(lang);
+	if (!t) localized.set(lang, (t = translateTree(treeTexts[`/content/i18n/${lang}/decision-tree.js`])));
+	return t;
+}
 
 export interface Crumb {
 	/** Question node the answer was given at. */

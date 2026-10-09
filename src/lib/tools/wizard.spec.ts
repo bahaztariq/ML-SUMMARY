@@ -64,3 +64,28 @@ describe('real decision tree', () => {
 		expect([...reached].sort()).toEqual(Object.keys(tree).sort());
 	});
 });
+
+describe('translated trees', () => {
+	it('replace texts but keep links and results', async () => {
+		const { translateTree } = await import('./wizard');
+		const tr = translateTree({ s: { q: 'Q1 fr', options: ['gauche'] }, r: { note: 'note fr' } }, mini);
+		expect(walk([0, 0], tr, 's').crumbs.map((c) => c.answer)).toEqual(['gauche', 'deep']);
+		expect(tr.r).toEqual({ result: ['x'], note: 'note fr' });
+		expect(tr.s).toMatchObject({ q: 'Q1 fr', options: [{ label: 'gauche', next: 'l' }, { label: 'right', next: 'r' }] });
+	});
+
+	it('exist for French and Arabic with the same shape as the English tree', async () => {
+		const { treeFor } = await import('./wizard');
+		for (const lang of ['fr', 'ar'] as const) {
+			const tr = treeFor(lang);
+			expect(Object.keys(tr)).toEqual(Object.keys(tree));
+			for (const [k, n] of Object.entries(tr)) {
+				const en = tree[k];
+				if (isQuestion(n) && isQuestion(en)) {
+					expect(n.q).not.toBe(en.q);
+					expect(n.options.map((o) => o.next)).toEqual(en.options.map((o) => o.next));
+				}
+			}
+		}
+	});
+});

@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { conceptById, concepts, tracks } from '#lib/content.ts';
-import { directPrerequisites, knowledgeTree, nodeKey, pipelineGraph, pipelines, prerequisiteGraph, taxonomy, taxonomyGraph } from './graphs.ts';
+import {
+	directPrerequisites,
+	knowledgeTree,
+	localizePipeline,
+	mermaidSkeleton,
+	nodeKey,
+	pipelineGraph,
+	pipelines,
+	prerequisiteGraph,
+	taxonomy,
+	taxonomyGraph,
+	taxonomyLabel
+} from './graphs.ts';
 
 /** Node ids declared in a flowchart source (id followed by a shape opener). */
 const declared = (source: string) =>
@@ -87,6 +99,27 @@ describe('pipelines', () => {
 			expect(Object.keys(g.links).length).toBe(Object.keys(p.links).length);
 			for (const key of Object.keys(p.links)) expect(p.source).toMatch(new RegExp(`\\b${key}\\s*[[({]`));
 		}
+	});
+
+	it('are translated with the same Mermaid skeleton, and fall back to English otherwise', () => {
+		for (const lang of ['fr', 'ar'] as const) {
+			for (const p of pipelines) {
+				const tr = localizePipeline(p, lang);
+				expect(tr.title).not.toBe(p.title);
+				expect(tr.source).not.toBe(p.source);
+				expect(mermaidSkeleton(tr.source)).toBe(mermaidSkeleton(p.source));
+			}
+		}
+		const broken = { ...pipelines[0], id: 'nope' };
+		expect(localizePipeline(broken, 'fr')).toBe(broken);
+	});
+});
+
+describe('taxonomy labels', () => {
+	it('translate grouping nodes', () => {
+		expect(taxonomyLabel('Machine Learning', 'fr')).toBe('Apprentissage automatique');
+		expect(taxonomyLabel('Machine Learning', 'en')).toBe('Machine Learning');
+		expect(taxonomyGraph(taxonomy, undefined, (l) => `<${l}>`).source).toContain('(["‹Machine Learning›"])');
 	});
 });
 

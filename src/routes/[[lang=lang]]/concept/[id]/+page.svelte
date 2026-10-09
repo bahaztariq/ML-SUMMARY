@@ -1,8 +1,8 @@
 <script lang="ts">
+	import { i18n, lhref, t } from '#lib/i18n/index.svelte.ts';
 	import { untrack } from 'svelte';
 	import { browser } from '$app/env';
 	import { page } from '$app/state';
-	import { resolve } from '$app/paths';
 	import {
 		conceptById,
 		formatKey,
@@ -10,7 +10,9 @@
 		getDependents,
 		learningChain,
 		pathById,
-		pathsContaining,
+		roadmapOrder,
+		roadmapPosition,
+		stageConceptIds,
 		trackById
 	} from '#lib/content.ts';
 	import { progress } from '#lib/progress.svelte.ts';
@@ -19,6 +21,7 @@
 	import ConceptCard from '#lib/components/ConceptCard.svelte';
 	import CodeBlock from '#lib/components/CodeBlock.svelte';
 	import Diagram from '#lib/components/Diagram.svelte';
+	import type { UiKey } from '#lib/i18n/ui/en.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -31,23 +34,43 @@
 	const related = $derived(getConcepts(c.related));
 	const chain = $derived(learningChain(c, progress.isLearned));
 
-	/* Path context: ?path=<id> when arriving from a learning path, else the first path containing it. */
-	const pathCtx = $derived.by(() => {
+	/*
+	 * Where this concept sits: the learning path in ?path=<id> when the learner came from one,
+	 * otherwise its stage in the roadmap. Previous/next follow that order.
+	 */
+	const ctx = $derived.by(() => {
 		const wanted = browser ? page.url.searchParams.get('path') : null;
-		const all = pathsContaining(c.id);
-		const hit = all.find((x) => x.path.id === wanted) ?? (wanted ? undefined : all[0]);
-		if (!hit) return null;
-		const { path, index } = hit;
+		const path = wanted ? pathById.get(wanted) : undefined;
+		if (path && path.steps.includes(c.id)) {
+			const index = path.steps.indexOf(c.id);
+			return {
+				label: `${path.icon} ${path.title}`,
+				href: lhref(`/paths/${path.id}`),
+				position: t('concept.stepOf', { i: index + 1, n: path.steps.length }),
+				steps: path.steps,
+				index,
+				query: `?path=${path.id}`,
+				prev: conceptById.get(path.steps[index - 1]),
+				next: conceptById.get(path.steps[index + 1])
+			};
+		}
+		const pos = roadmapPosition(c.id);
+		if (!pos) return null;
+		const at = roadmapOrder.indexOf(c.id);
+		const stageLabel = pos.stage.kind === 'core' ? t('concept.stageN', { n: pos.stageIndex + 1 }) : t('concept.specialization');
 		return {
-			path,
-			index,
-			prev: index > 0 ? conceptById.get(path.steps[index - 1]) : undefined,
-			next: index < path.steps.length - 1 ? conceptById.get(path.steps[index + 1]) : undefined
+			label: `${pos.stage.icon} ${stageLabel} · ${pos.stage.title}`,
+			href: `${lhref('/roadmap')}#${pos.stage.id}`,
+			position: t('concept.posInStage', { i: pos.index + 1, n: pos.size }),
+			steps: stageConceptIds(pos.stage),
+			index: pos.index,
+			query: '',
+			prev: conceptById.get(roadmapOrder[at - 1]),
+			next: conceptById.get(roadmapOrder[at + 1])
 		};
 	});
-	const nextUp = $derived(pathCtx?.next ?? unlocks.find((u) => !progress.isLearned(u.id)) ?? unlocks[0]);
-	const pathHref = (id: string) =>
-		pathCtx ? `${resolve('/concept/[id]', { id })}?path=${pathCtx.path.id}` : resolve('/concept/[id]', { id });
+	const nextUp = $derived(ctx?.next ?? unlocks.find((u) => !progress.isLearned(u.id)) ?? unlocks[0]);
+	const pathHref = (id: string) => `${lhref(`/concept/${id}`)}${ctx?.query ?? ''}`;
 
 	$effect(() => {
 		const id = c.id;
@@ -56,14 +79,14 @@
 
 	const sections = $derived(
 		[
-			{ id: 'intuition', label: 'Intuition', show: !!c.intuition },
-			{ id: 'when', label: 'When to use it', show: !!(c.whenToUse || c.whenToAvoid) },
-			{ id: 'how', label: 'How it works', show: !!c.diagram },
-			{ id: 'math', label: 'Math', show: !!(c.math?.formula || c.math?.explanation) },
-			{ id: 'params', label: 'Hyperparameters', show: !!c.parameters?.length },
-			{ id: 'tradeoffs', label: 'Trade-offs', show: !!(c.pros?.length || c.cons?.length) },
-			{ id: 'code', label: 'Code', show: !!c.codeSnippet },
-			{ id: 'connections', label: 'Where it fits', show: true }
+			{ id: 'intuition', label: t('concept.intuition'), show: !!c.intuition },
+			{ id: 'when', label: t('concept.whenToUse'), show: !!(c.whenToUse || c.whenToAvoid) },
+			{ id: 'how', label: t('concept.howItWorks'), show: !!c.diagram },
+			{ id: 'math', label: t('concept.math'), show: !!(c.math?.formula || c.math?.explanation) },
+			{ id: 'params', label: t('concept.hyperparameters'), show: !!c.parameters?.length },
+			{ id: 'tradeoffs', label: t('concept.tradeoffs'), show: !!(c.pros?.length || c.cons?.length) },
+			{ id: 'code', label: t('concept.code'), show: !!c.codeSnippet },
+			{ id: 'connections', label: t('concept.whereItFits'), show: true }
 		].filter((s) => s.show)
 	);
 
@@ -84,32 +107,36 @@
 
 	const METRIC_CONCEPTS = new Set(['confusion-matrix-concept', 'precision-recall-f1', 'roc-auc', 'pr-curve', 'class-imbalance']);
 
-	const requirementValue = (v: boolean | string) => (v === true ? 'Yes' : v === false ? 'No' : v);
+	const requirementValue = (v: boolean | string) => (v === true ? t('common.yes') : v === false ? t('common.no') : v);
+	/** Known requirement keys are translated; others fall back to a readable form of the key. */
+	const requirementLabel = (k: string) => {
+		const key = `req.${k}` as UiKey;
+		const label = t(key);
+		return label === key ? formatKey(k) : label;
+	};
 </script>
 
 <svelte:head>
-	<title>{c.name} · ML Hub</title>
+	<title>{c.name} · {t('site.name')}</title>
 	<meta name="description" content={c.summary} />
 </svelte:head>
 
 <article style:--tc={track.color}>
 	<header class="hero">
 		<div class="container">
-			<nav class="crumbs" aria-label="Breadcrumb">
-				<a href={resolve('/learn')}>Learn</a>
+			<nav class="crumbs" aria-label={t('concept.breadcrumb')}>
+				<a href={lhref('/learn')}>{t('nav.learn')}</a>
 				<span>/</span>
-				<a href="{resolve('/learn')}?track={track.id}">{track.label}</a>
+				<a href="{lhref('/learn')}?track={track.id}">{track.label}</a>
 			</nav>
 
-			{#if pathCtx}
+			{#if ctx}
 				<div class="path-bar">
-					<a class="path-name" href={resolve('/paths/[id]', { id: pathCtx.path.id })}>
-						{pathCtx.path.icon} {pathCtx.path.title}
-					</a>
-					<span class="path-pos">Step {pathCtx.index + 1} of {pathCtx.path.steps.length}</span>
+					<a class="path-name" href={ctx.href}>{ctx.label}</a>
+					<span class="path-pos">{ctx.position}</span>
 					<div class="path-track" aria-hidden="true">
-						{#each pathCtx.path.steps as sid, i (sid)}
-							<span class:done={progress.isLearned(sid)} class:here={i === pathCtx.index}></span>
+						{#each ctx.steps as sid, i (sid)}
+							<span class:done={progress.isLearned(sid)} class:here={i === ctx.index}></span>
 						{/each}
 					</div>
 				</div>
@@ -125,23 +152,23 @@
 			<div class="chips">
 				<span class="chip track-chip"><span class="dot"></span>{track.label}</span>
 				<span class="chip">{c.category}</span>
-				<span class="chip diff-{c.difficulty.toLowerCase()}">{c.difficulty}</span>
-				{#each c.task ?? [] as t (t)}
-					<span class="chip subtle">{t}</span>
+				<span class="chip diff-{c.difficulty.toLowerCase()}">{t(`difficulty.${c.difficulty}`)}</span>
+				{#each c.task ?? [] as task (task)}
+					<span class="chip subtle">{task}</span>
 				{/each}
 			</div>
 
 			<div class="actions">
 				<button class="btn" class:learned onclick={() => progress.toggle(c.id)} aria-pressed={learned}>
-					{learned ? '✓ Learned' : 'Mark as learned'}
+					{learned ? t('concept.learned') : t('concept.markLearned')}
 				</button>
 				{#if hasExplainer(c.id)}
-					<a class="btn btn-ghost" href="#lesson">▶ Start the lesson</a>
+					<a class="btn btn-ghost" href="#lesson">{t('concept.startLesson')}</a>
 				{/if}
 				{#if METRIC_CONCEPTS.has(c.id)}
-					<a class="btn btn-ghost" href={resolve('/tools/metrics-lab')}>Open the Metrics Lab</a>
+					<a class="btn btn-ghost" href={lhref('/tools/metrics-lab')}>{t('concept.openMetricsLab')}</a>
 				{/if}
-				<a class="btn btn-ghost" href="{resolve('/tools/compare')}?a={c.id}">Compare with…</a>
+				<a class="btn btn-ghost" href="{lhref('/tools/compare')}?a={c.id}">{t('concept.compareWith')}</a>
 			</div>
 		</div>
 	</header>
@@ -149,12 +176,12 @@
 	{#if hasExplainer(c.id)}
 		<section id="lesson" class="container lesson">
 			{#await loadExplainer(c.id)}
-				<div class="lesson-loading card">Loading interactive lesson…</div>
+				<div class="lesson-loading card">{t('concept.loadingLesson')}</div>
 			{:then mod}
 				{#if mod}
 					<div class="section-head">
-						<span class="eyebrow">Interactive lesson</span>
-						<h2>{mod.title}</h2>
+						<span class="eyebrow">{t('common.interactiveLesson')}</span>
+						<h2>{(i18n.current !== 'en' && mod.i18n?.[i18n.current]?.title) || mod.title}</h2>
 					</div>
 					{#key c.id}
 						<Player
@@ -172,8 +199,8 @@
 	{:else if hasPlayground(c.id)}
 		<section id="lesson" class="container lesson">
 			<div class="section-head">
-				<span class="eyebrow">Playground</span>
-				<h2>Try it yourself</h2>
+				<span class="eyebrow">{t('common.playground')}</span>
+				<h2>{t('concept.tryIt')}</h2>
 			</div>
 			{#if browser}
 				{#await import('#lib/viz/legacy/LegacyViz.svelte') then { default: LegacyViz }}
@@ -187,24 +214,24 @@
 		<div class="main">
 			{#if c.intuition}
 				<section id="intuition">
-					<h2>Intuition</h2>
+					<h2>{t('concept.intuition')}</h2>
 					<blockquote class="intuition">{c.intuition}</blockquote>
 				</section>
 			{/if}
 
 			{#if c.whenToUse || c.whenToAvoid}
 				<section id="when">
-					<h2>When to use it</h2>
+					<h2>{t('concept.whenToUse')}</h2>
 					<div class="two">
 						{#if c.whenToUse}
 							<div class="card use">
-								<h3><span class="icon">✓</span> Use it when</h3>
+								<h3><span class="icon">✓</span> {t('concept.useWhen')}</h3>
 								<p>{c.whenToUse}</p>
 							</div>
 						{/if}
 						{#if c.whenToAvoid}
 							<div class="card avoid">
-								<h3><span class="icon">✕</span> Avoid it when</h3>
+								<h3><span class="icon">✕</span> {t('concept.avoidWhen')}</h3>
 								<p>{c.whenToAvoid}</p>
 							</div>
 						{/if}
@@ -213,7 +240,7 @@
 						<div class="reqs">
 							{#each Object.entries(c.requirements) as [k, v] (k)}
 								<div class="req">
-									<span class="req-k">{formatKey(k)}</span>
+									<span class="req-k">{requirementLabel(k)}</span>
 									<span class="req-v" class:yes={v === true} class:no={v === false}>{requirementValue(v)}</span>
 								</div>
 							{/each}
@@ -224,21 +251,21 @@
 
 			{#if c.diagram}
 				<section id="how">
-					<h2>How it works</h2>
+					<h2>{t('concept.howItWorks')}</h2>
 					{#if browser}
-						<Diagram source={c.diagram} label="How {c.name} works" />
+						<Diagram source={c.diagram} label={t('concept.howItWorksOf', { name: c.name })} />
 					{/if}
 				</section>
 			{/if}
 
 			{#if c.math?.formula || c.math?.explanation}
 				<section id="math">
-					<h2>Math</h2>
+					<h2>{t('concept.math')}</h2>
 					{#if c.math.formula}
-						<div class="formula">{c.math.formula}</div>
+						<div class="formula" dir="ltr">{c.math.formula}</div>
 					{/if}
 					{#if c.math.loss}
-						<p class="loss"><span class="eyebrow">Loss</span> {c.math.loss}</p>
+						<p class="loss"><span class="eyebrow">{t('concept.loss')}</span> {c.math.loss}</p>
 					{/if}
 					{#if c.math.explanation}
 						<p class="prose">{c.math.explanation}</p>
@@ -248,17 +275,17 @@
 
 			{#if c.parameters?.length}
 				<section id="params">
-					<h2>Hyperparameters</h2>
+					<h2>{t('concept.hyperparameters')}</h2>
 					<div class="params">
 						{#each c.parameters as p (p.name)}
 							<div class="param card">
 								<div class="param-head">
 									<code class="param-name">{p.name}</code>
 									{#if p.type}<span class="param-type">{p.type}</span>{/if}
-									{#if p.default}<span class="param-default">default <code>{p.default}</code></span>{/if}
+									{#if p.default}<span class="param-default">{t('concept.default')} <code>{p.default}</code></span>{/if}
 								</div>
 								{#if p.impact}<p>{p.impact}</p>{/if}
-								{#if p.tuningTip}<p class="tip"><strong>Tuning tip</strong> {p.tuningTip}</p>{/if}
+								{#if p.tuningTip}<p class="tip"><strong>{t('concept.tuningTip')}</strong> {p.tuningTip}</p>{/if}
 							</div>
 						{/each}
 					</div>
@@ -267,7 +294,7 @@
 
 			{#if c.pros?.length || c.cons?.length}
 				<section id="tradeoffs">
-					<h2>Trade-offs</h2>
+					<h2>{t('concept.tradeoffs')}</h2>
 					<div class="two">
 						<ul class="list pros">
 							{#each c.pros ?? [] as p (p)}<li>{p}</li>{/each}
@@ -281,21 +308,21 @@
 
 			{#if c.codeSnippet}
 				<section id="code">
-					<h2>Code</h2>
+					<h2>{t('concept.code')}</h2>
 					<CodeBlock code={c.codeSnippet} />
 				</section>
 			{/if}
 
 			<section id="connections">
 				<div class="h2-row">
-					<h2>Where it fits</h2>
-					<a class="map-link" href="{resolve('/map/prerequisites')}?track={c.track}">See the {track.label} map →</a>
+					<h2>{t('concept.whereItFits')}</h2>
+					<a class="map-link" href="{lhref('/map/prerequisites')}?track={c.track}">{t('concept.seeMap', { track: track.label })} {t('common.arrowForward')}</a>
 				</div>
 				{#if browser && (prereqs.length || unlocks.length)}
-					<Diagram source={chain.source} links={chain.links} highlight={chain.current} label="Learning chain" />
+					<Diagram source={chain.source} links={chain.links} highlight={chain.current} label={t('concept.learningChain')} />
 				{/if}
 				<div class="link-groups">
-					{#each [{ title: 'Learn first', list: prereqs }, { title: 'Unlocks', list: unlocks }, { title: 'Related', list: related }] as g (g.title)}
+					{#each [{ title: t('concept.learnFirst'), list: prereqs }, { title: t('concept.unlocks'), list: unlocks }, { title: t('concept.related'), list: related }] as g (g.title)}
 						{#if g.list.length}
 							<div>
 								<h3 class="group-title">{g.title}</h3>
@@ -310,40 +337,40 @@
 
 			<section id="finish" class="finish card">
 				<div>
-					<h2>{learned ? 'Nice work.' : 'Got it?'}</h2>
+					<h2>{learned ? t('concept.niceWork') : t('concept.gotIt')}</h2>
 					<p class="muted">
 						{learned
-							? 'This concept is marked as learned.'
-							: 'Mark this concept as learned to track your progress.'}
+							? t('concept.markedLearned')
+							: t('concept.markToTrack')}
 					</p>
 				</div>
 				<div class="finish-actions">
 					<button class="btn" class:btn-primary={!learned} onclick={() => progress.toggle(c.id)}>
-						{learned ? 'Unmark' : '✓ Mark as learned'}
+						{learned ? t('concept.unmark') : t('concept.markLearnedCta')}
 					</button>
 					{#if nextUp}
-						<a class="btn next-btn" class:btn-primary={learned} href={pathHref(nextUp.id)}>Next: {nextUp.name} →</a>
+						<a class="btn next-btn" class:btn-primary={learned} href={pathHref(nextUp.id)}>{t('concept.nextName', { name: nextUp.name })} {t('common.arrowForward')}</a>
 					{/if}
 				</div>
 			</section>
 
-			{#if pathCtx}
-				<nav class="pager" aria-label="Learning path">
-					{#if pathCtx.prev}
-						<a class="card" href={pathHref(pathCtx.prev.id)}><span class="muted">← Previous</span>{pathCtx.prev.name}</a>
+			{#if ctx}
+				<nav class="pager" aria-label={t('concept.prevNext')}>
+					{#if ctx.prev}
+						<a class="card" href={pathHref(ctx.prev.id)}><span class="muted">{t('common.arrowBack')} {t('concept.previous')}</span>{ctx.prev.name}</a>
 					{:else}<span></span>{/if}
-					{#if pathCtx.next}
-						<a class="card next" href={pathHref(pathCtx.next.id)}><span class="muted">Next →</span>{pathCtx.next.name}</a>
+					{#if ctx.next}
+						<a class="card next" href={pathHref(ctx.next.id)}><span class="muted">{t('concept.next')} {t('common.arrowForward')}</span>{ctx.next.name}</a>
 					{/if}
 				</nav>
 			{/if}
 		</div>
 
-		<aside class="toc" aria-label="On this page">
-			<span class="eyebrow">On this page</span>
+		<aside class="toc" aria-label={t('concept.onThisPage')}>
+			<span class="eyebrow">{t('concept.onThisPage')}</span>
 			<ul>
 				{#if hasExplainer(c.id) || hasPlayground(c.id)}
-					<li><a href="#lesson">{hasExplainer(c.id) ? 'Interactive lesson' : 'Playground'}</a></li>
+					<li><a href="#lesson">{hasExplainer(c.id) ? t('common.interactiveLesson') : t('common.playground')}</a></li>
 				{/if}
 				{#each sections as s (s.id)}
 					<li><a href="#{s.id}" class:active={activeSection === s.id}>{s.label}</a></li>
@@ -501,8 +528,9 @@
 	.intuition {
 		margin: 0;
 		padding: 16px 20px;
-		border-left: 3px solid var(--tc);
-		border-radius: 0 var(--radius) var(--radius) 0;
+		border-inline-start: 3px solid var(--tc);
+		border-start-end-radius: var(--radius);
+		border-end-end-radius: var(--radius);
 		background: color-mix(in srgb, var(--tc) 6%, var(--surface));
 		font-size: 1.0625rem;
 		line-height: 1.65;
@@ -585,6 +613,7 @@
 		line-height: 1.7;
 		overflow-x: auto;
 		white-space: pre-wrap;
+		text-align: left;
 		margin-bottom: 12px;
 	}
 	.loss {
@@ -635,7 +664,7 @@
 	.tip strong {
 		color: var(--text);
 		font-weight: 600;
-		margin-right: 4px;
+		margin-inline-end: 4px;
 	}
 	.list {
 		margin: 0;
@@ -647,7 +676,8 @@
 	}
 	.list li {
 		position: relative;
-		padding: 10px 12px 10px 34px;
+		padding-block: 10px;
+		padding-inline: 34px 12px;
 		border-radius: var(--radius-sm);
 		background: var(--surface);
 		border: 1px solid var(--border);
@@ -655,7 +685,7 @@
 	}
 	.list li::before {
 		position: absolute;
-		left: 12px;
+		inset-inline-start: 12px;
 		top: 10px;
 		font-weight: 700;
 	}
@@ -719,7 +749,7 @@
 		min-height: 36px;
 		padding-block: 7px;
 		white-space: normal;
-		text-align: left;
+		text-align: start;
 		max-width: 100%;
 	}
 	.pager {
@@ -742,7 +772,7 @@
 		font-weight: 500;
 	}
 	.pager .next {
-		text-align: right;
+		text-align: end;
 		grid-column: 2;
 	}
 
@@ -759,13 +789,13 @@
 		list-style: none;
 		display: grid;
 		gap: 2px;
-		border-left: 1px solid var(--border);
+		border-inline-start: 1px solid var(--border);
 	}
 	.toc a {
 		display: block;
-		margin-left: -1px;
+		margin-inline-start: -1px;
 		padding: 4px 12px;
-		border-left: 2px solid transparent;
+		border-inline-start: 2px solid transparent;
 		font-size: 0.8125rem;
 		color: var(--text-3);
 	}
@@ -774,7 +804,7 @@
 	}
 	.toc a.active {
 		color: var(--text);
-		border-left-color: var(--tc);
+		border-inline-start-color: var(--tc);
 		font-weight: 500;
 	}
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeMetrics, formatMetric, presets } from './metrics';
+import { computeMetrics, formatMetric, metricInfo, metricInfoFor, presets, presetsFor } from './metrics';
 
 describe('computeMetrics', () => {
 	it('matches hand-computed values', () => {
@@ -45,5 +45,17 @@ describe('formatMetric', () => {
 		expect(formatMetric(0.1234)).toBe('12.3%');
 		expect(formatMetric(-0.5, true)).toBe('-0.50');
 		expect(formatMetric(null)).toBe('—');
+		expect(formatMetric(0.1234, false, 'fr')).toBe('12,3\u202f%');
+		expect(formatMetric(0.1234, false, 'ar')).toBe('12.3%');
+	});
+
+	it('has translated texts for every metric and preset', () => {
+		for (const lang of ['fr', 'ar'] as const) {
+			metricInfoFor(lang).forEach((m, i) => expect(m.question).not.toBe(metricInfo[i].question));
+			presetsFor(lang).forEach((p, i) => {
+				expect(p.why).not.toBe(presets[i].why);
+				expect(p.counts).toEqual(presets[i].counts);
+			});
+		}
 	});
 });

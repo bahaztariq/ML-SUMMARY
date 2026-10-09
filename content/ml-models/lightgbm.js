@@ -6,7 +6,7 @@ export default {
   task: ["Classification", "Regression", "Ranking"],
   difficulty: "Advanced",
   summary: "A gradient boosting framework by Microsoft that uses histogram-based split finding and leaf-wise tree growth for drastically faster training on large datasets compared to XGBoost.",
-  intuition: "The Speed Demon of Boosting: XGBoost considers every possible split point. LightGBM buckets continuous features into ~255 histogram bins and only evaluates bin edges, making it 10-20x faster on large data with negligible accuracy loss.",
+  intuition: "The Speed Demon of Boosting: instead of trying every possible split point, LightGBM buckets continuous features into ~255 histogram bins and only evaluates bin edges, and it grows trees leaf-wise. On large data this makes training several times faster than exact split search, with negligible accuracy loss. (XGBoost has since adopted histogram splits too, via tree_method=\"hist\".)",
   whenToUse: "Large tabular datasets (>100K rows). Kaggle competitions. When training speed matters. When you have high-cardinality categorical features.",
   whenToAvoid: "Very small datasets (<2000 samples) where it may overfit aggressively due to leaf-wise growth.",
   requirements: {
@@ -51,7 +51,7 @@ export default {
     explanation: "GOSS keeps all instances with large gradients and randomly samples small-gradient instances, focusing computation where the model is most wrong. EFB bundles mutually exclusive sparse features to reduce dimensionality."
   },
   pros: [
-    "10-20x faster training than XGBoost on large datasets due to histogram-based splits",
+    "Much faster training on large datasets thanks to histogram-based splits, GOSS and leaf-wise growth",
     "Native optimal categorical feature handling (no manual encoding needed)",
     "Lower memory consumption through histogram binning",
     "State-of-the-art accuracy competitive with XGBoost"

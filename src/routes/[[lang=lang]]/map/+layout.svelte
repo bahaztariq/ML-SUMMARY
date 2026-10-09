@@ -1,46 +1,88 @@
 <script lang="ts">
+	import { lhref, local, unlocalizedPath } from '#lib/i18n/index.svelte.ts';
 	import { page } from '$app/state';
-	import { resolve } from '$app/paths';
 	import { concepts } from '#lib/content.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
 
+	// English is the source; its keys type the other languages.
+	const en = {
+		eyebrow: 'Concept map',
+		title: 'How it all fits together',
+		lead: 'Four views of the same {n} concepts: where each technique sits in the field, what to learn before it, everything at a glance, and how the pieces chain into real-world pipelines.',
+		learned: '✓ {n} learned',
+		views: 'Map views',
+		bigPicture: 'Big picture',
+		prerequisites: 'Prerequisites',
+		tree: 'Knowledge tree',
+		pipelines: 'Pipelines'
+	};
+	const L = local({
+		en,
+		fr: {
+			eyebrow: 'Carte des concepts',
+			title: 'Comment tout s’articule',
+			lead: 'Quatre vues des mêmes {n} concepts\u00a0: la place de chaque technique dans le domaine, ce qu’il faut apprendre avant, une vue d’ensemble, et la façon dont les briques s’enchaînent dans des pipelines réels.',
+			learned: '✓ {n} appris',
+			views: 'Vues de la carte',
+			bigPicture: 'Vue d’ensemble',
+			prerequisites: 'Prérequis',
+			tree: 'Arbre des connaissances',
+			pipelines: 'Pipelines'
+		},
+		ar: {
+			eyebrow: 'خريطة المفاهيم',
+			title: 'كيف يترابط كل شيء',
+			lead: 'أربعة عروض لنفس المفاهيم الـ{n}: موقع كل تقنية في المجال، وما يجب تعلّمه قبلها، ونظرة شاملة على كل شيء، وكيف تتسلسل القطع في خطوط معالجة واقعية.',
+			learned: '✓ تم تعلّم {n}',
+			views: 'عروض الخريطة',
+			bigPicture: 'الصورة الكبرى',
+			prerequisites: 'المتطلبات المسبقة',
+			tree: 'شجرة المعرفة',
+			pipelines: 'خطوط المعالجة'
+		}
+	});
+
 	const views = [
-		{ href: '/map', label: 'Big picture' },
-		{ href: '/map/prerequisites', label: 'Prerequisites' },
-		{ href: '/map/tree', label: 'Knowledge tree' },
-		{ href: '/map/pipelines', label: 'Pipelines' }
+		{ href: '/map', key: 'bigPicture' },
+		{ href: '/map/prerequisites', key: 'prerequisites' },
+		{ href: '/map/tree', key: 'tree' },
+		{ href: '/map/pipelines', key: 'pipelines' }
 	] as const;
 
-	const current = $derived(page.url.pathname.replace(/\/$/, ''));
+	// Compare without the base path and language prefix (/ar/map/tree → /map/tree).
+	const current = $derived(unlocalizedPath(page.url.pathname).replace(/(.)\/$/, '$1'));
 
 	// On narrow screens the view tabs scroll; keep the active one in sight.
 	let nav = $state<HTMLElement>();
 	$effect(() => {
 		current;
 		const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
-		if (nav && active) nav.scrollLeft = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+		if (!nav || !active) return;
+		// Rect-based so it works in both directions (RTL scrollLeft is negative).
+		const a = active.getBoundingClientRect();
+		const n = nav.getBoundingClientRect();
+		nav.scrollLeft += a.left + a.width / 2 - (n.left + n.width / 2);
 	});
 </script>
 
 <div class="container page">
 	<header class="head">
-		<span class="eyebrow">Concept map</span>
-		<h1>How it all fits together</h1>
+		<span class="eyebrow">{L('eyebrow')}</span>
+		<h1>{L('title')}</h1>
 		<p class="muted">
-			Four views of the same {concepts.length} concepts: where each technique sits in the field, what to learn before
-			it, everything at a glance, and how the pieces chain into real-world pipelines.
+			{L('lead', { n: concepts.length })}
 			{#if progress.ready && progress.learned.size}
-				<span class="learned">✓ {progress.learned.size} learned</span>
+				<span class="learned">{L('learned', { n: progress.learned.size })}</span>
 			{/if}
 		</p>
 	</header>
 
-	<nav class="views" aria-label="Map views" bind:this={nav}>
+	<nav class="views" aria-label={L('views')} bind:this={nav}>
 		{#each views as v (v.href)}
-			<a href={resolve(v.href)} aria-current={current === v.href ? 'page' : undefined}>{v.label}</a>
+			<a href={lhref(v.href)} aria-current={current === v.href ? 'page' : undefined}>{L(v.key)}</a>
 		{/each}
 	</nav>
 
@@ -92,8 +134,8 @@
 	.views a[aria-current='page']::after {
 		content: '';
 		position: absolute;
-		left: 8px;
-		right: 8px;
+		inset-inline-start: 8px;
+		inset-inline-end: 8px;
 		bottom: -1px;
 		height: 2px;
 		border-radius: 2px;

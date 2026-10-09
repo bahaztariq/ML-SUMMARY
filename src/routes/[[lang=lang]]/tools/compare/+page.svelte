@@ -1,14 +1,121 @@
 <script lang="ts">
+	import { i18n, lhref, local, t } from '#lib/i18n/index.svelte.ts';
 	import { untrack } from 'svelte';
 	import { browser } from '$app/env';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { formatKey, trackById } from '#lib/content.ts';
-	import { fullConceptById as conceptById } from '#lib/content-full.ts';
+	import { conceptById as metaById, trackById } from '#lib/content.ts';
+	import { fullConceptById, localizeConcept } from '#lib/content-full.ts';
 	import { MAX_SLOTS, parseSelection, requirementKeys, suggestions, writeSelection } from '#lib/tools/compare.ts';
+	import { requirementLabel } from '#lib/tools/requirement-labels.ts';
 	import ConceptPicker from '#lib/tools/ConceptPicker.svelte';
+	import type { UiKey } from '#lib/i18n/ui/en.ts';
 	import type { Concept } from '#lib/types.ts';
+
+	// English is the source; its keys type the other languages.
+	const en = {
+		title: 'Compare concepts',
+		description: 'Put two or three machine learning concepts side by side: when to use them, requirements, hyperparameters, pros and cons.',
+		tools: 'Tools',
+		lead: 'Pick two or three concepts and read them side by side. The URL updates so you can share a comparison.',
+		change: 'Change',
+		remove: 'Remove',
+		removeName: 'Remove {name}',
+		concept: 'Concept {slot}',
+		pick: 'Pick concept {slot}',
+		placeholderA: 'e.g. Random Forest',
+		placeholderB: 'e.g. XGBoost',
+		placeholderC: 'Add a third…',
+		cancel: 'Cancel',
+		removeSlot: 'Remove slot',
+		pickFirst: 'Pick concept {slot} first.',
+		trackCategory: 'Track & category',
+		difficulty: 'Difficulty',
+		summary: 'Summary',
+		whenToUse: 'When to use',
+		whenToAvoid: 'When to avoid',
+		requirements: 'Requirements',
+		hyperparameters: 'Hyperparameters',
+		none: 'None',
+		pros: 'Pros',
+		cons: 'Cons',
+		addThird: 'Add a third concept',
+		popular: 'Popular comparisons',
+		vs: 'vs'
+	};
+	const L = local({
+		en,
+		fr: {
+			title: 'Comparer des concepts',
+			description: 'Mettez deux ou trois concepts d’apprentissage automatique côte à côte\u00a0: quand les utiliser, prérequis, hyperparamètres, avantages et inconvénients.',
+			tools: 'Outils',
+			lead: 'Choisissez deux ou trois concepts et lisez-les côte à côte. L’URL se met à jour pour que vous puissiez partager la comparaison.',
+			change: 'Changer',
+			remove: 'Retirer',
+			removeName: 'Retirer {name}',
+			concept: 'Concept {slot}',
+			pick: 'Choisir le concept {slot}',
+			placeholderA: 'p.\u00a0ex. Random Forest',
+			placeholderB: 'p.\u00a0ex. XGBoost',
+			placeholderC: 'Ajouter un troisième…',
+			cancel: 'Annuler',
+			removeSlot: 'Retirer cet emplacement',
+			pickFirst: 'Choisissez d’abord le concept {slot}.',
+			trackCategory: 'Parcours et catégorie',
+			difficulty: 'Difficulté',
+			summary: 'Résumé',
+			whenToUse: 'Quand l’utiliser',
+			whenToAvoid: 'Quand l’éviter',
+			requirements: 'Prérequis sur les données',
+			hyperparameters: 'Hyperparamètres',
+			none: 'Aucun',
+			pros: 'Avantages',
+			cons: 'Inconvénients',
+			addThird: 'Ajouter un troisième concept',
+			popular: 'Comparaisons populaires',
+			vs: 'vs'
+		},
+		ar: {
+			title: 'مقارنة المفاهيم',
+			description: 'ضع مفهومين أو ثلاثة من مفاهيم التعلم الآلي جنبًا إلى جنب: متى تستخدمها، والمتطلبات، والمعاملات الفائقة، والمزايا والعيوب.',
+			tools: 'الأدوات',
+			lead: 'اختر مفهومين أو ثلاثة واقرأها جنبًا إلى جنب. يتحدّث الرابط تلقائيًا لتتمكن من مشاركة المقارنة.',
+			change: 'تغيير',
+			remove: 'إزالة',
+			removeName: 'إزالة {name}',
+			concept: 'المفهوم {slot}',
+			pick: 'اختر المفهوم {slot}',
+			placeholderA: 'مثلًا Random Forest',
+			placeholderB: 'مثلًا XGBoost',
+			placeholderC: 'أضف مفهومًا ثالثًا…',
+			cancel: 'إلغاء',
+			removeSlot: 'إزالة الخانة',
+			pickFirst: 'اختر المفهوم {slot} أولًا.',
+			trackCategory: 'المسار والفئة',
+			difficulty: 'الصعوبة',
+			summary: 'الملخص',
+			whenToUse: 'متى تستخدمه',
+			whenToAvoid: 'متى تتجنبه',
+			requirements: 'المتطلبات',
+			hyperparameters: 'المعاملات الفائقة',
+			none: 'لا يوجد',
+			pros: 'المزايا',
+			cons: 'العيوب',
+			addThird: 'أضف مفهومًا ثالثًا',
+			popular: 'مقارنات شائعة',
+			vs: 'مقابل'
+		}
+	});
+
+	/** Full concepts in the current language (texts from content/i18n, ids and code unchanged). */
+	const conceptById = {
+		has: (id: string) => fullConceptById.has(id),
+		get: (id: string) => {
+			const c = fullConceptById.get(id);
+			return c && localizeConcept(c, i18n.current);
+		}
+	};
+	const slotName = (i: number) => String.fromCharCode(65 + i);
 
 	let ids = $state<string[]>([]);
 	let wantThird = $state(false);
@@ -36,16 +143,17 @@
 	const reqKeys = $derived(requirementKeys(picked));
 	let changing = $state<number | null>(null);
 
-	const reqValue = (c: Concept, k: string) => {
-		const v = c.requirements?.[k];
-		return v === undefined ? '—' : v === true ? 'Yes' : v === false ? 'No' : v;
-	};
+	const reqValue = (c: Concept, k: string) => c.requirements?.[k];
 	const pairs = suggestions.filter((p) => p.every((id) => conceptById.has(id)));
-	const name = (id: string) => conceptById.get(id)!.name;
-	const compareHref = (a: string, b: string) => `${resolve('/tools/compare')}?a=${a}&b=${b}`;
+	// The light index has localized names without loading full concepts.
+	const name = (id: string) => metaById.get(id)?.name ?? id;
+	const compareHref = (a: string, b: string) => `${lhref('/tools/compare')}?a=${a}&b=${b}`;
 </script>
 
-<svelte:head><title>Compare concepts · ML Hub</title></svelte:head>
+<svelte:head>
+	<title>{L('title')} · {t('site.name')}</title>
+	<meta name="description" content={L('description')} />
+</svelte:head>
 
 {#snippet text(v: string | undefined)}
 	{#if v}<p>{v}</p>{:else}<span class="none">—</span>{/if}
@@ -60,10 +168,10 @@
 {/snippet}
 
 <div class="container page">
-	<a class="back" href={resolve('/tools')}>← Tools</a>
+	<a class="back" href={lhref('/tools')}><span aria-hidden="true">{t('common.arrowBack')}</span> {L('tools')}</a>
 	<header class="head">
-		<h1>Compare concepts</h1>
-		<p class="muted">Pick two or three concepts and read them side by side. The URL updates so you can share a comparison.</p>
+		<h1>{L('title')}</h1>
+		<p class="muted">{L('lead')}</p>
 	</header>
 
 	<!-- Scroll horizontally only when all three slots are filled, so picker dropdowns are never clipped. -->
@@ -75,19 +183,21 @@
 					{#if c && changing !== i}
 						<div class="slot-head card" style:--tc={trackById[c.track].color}>
 							<span class="track"><span class="dot"></span>{trackById[c.track].label}</span>
-							<a class="slot-name" href={resolve('/concept/[id]', { id: c.id })}>{c.name}</a>
+							<a class="slot-name" href={lhref(`/concept/${c.id}`)}>{c.name}</a>
 							<div class="slot-actions">
-								<button class="btn btn-ghost btn-sm" onclick={() => (changing = i)}>Change</button>
-								<button class="btn btn-ghost btn-sm" aria-label="Remove {c.name}" onclick={() => removeAt(i)}>Remove</button>
+								<button class="btn btn-ghost btn-sm" onclick={() => (changing = i)}>{L('change')}</button>
+								<button class="btn btn-ghost btn-sm" aria-label={L('removeName', { name: c.name })} onclick={() => removeAt(i)}
+									>{L('remove')}</button
+								>
 							</div>
 						</div>
 					{:else if c || i === ids.length}
 						<div class="slot-pick">
-							<span class="eyebrow">Concept {String.fromCharCode(65 + i)}</span>
+							<span class="eyebrow">{L('concept', { slot: slotName(i) })}</span>
 							<ConceptPicker
 								exclude={ids}
-								label="Pick concept {String.fromCharCode(65 + i)}"
-								placeholder={i === 0 ? 'e.g. Random Forest' : i === 1 ? 'e.g. XGBoost' : 'Add a third…'}
+								label={L('pick', { slot: slotName(i) })}
+								placeholder={i === 0 ? L('placeholderA') : i === 1 ? L('placeholderB') : L('placeholderC')}
 								onpick={(id) => {
 									if (c) replaceAt(i, id);
 									else add(id);
@@ -95,72 +205,75 @@
 								}}
 							/>
 							{#if c}
-								<button class="btn btn-ghost btn-sm" onclick={() => (changing = null)}>Cancel</button>
+								<button class="btn btn-ghost btn-sm" onclick={() => (changing = null)}>{L('cancel')}</button>
 							{:else if i === 2}
-								<button class="btn btn-ghost btn-sm" onclick={() => (wantThird = false)}>Remove slot</button>
+								<button class="btn btn-ghost btn-sm" onclick={() => (wantThird = false)}>{L('removeSlot')}</button>
 							{/if}
 						</div>
 					{:else}
 						<div class="slot-pick waiting">
-							<span class="eyebrow">Concept {String.fromCharCode(65 + i)}</span>
-							<p class="muted">Pick concept {String.fromCharCode(64 + i)} first.</p>
+							<span class="eyebrow">{L('concept', { slot: slotName(i) })}</span>
+							<p class="muted">{L('pickFirst', { slot: slotName(i - 1) })}</p>
 						</div>
 					{/if}
 				</div>
 			{/each}
 
 			{#if picked.length}
-				<div class="row-h">Track & category</div>
+				<div class="row-h">{L('trackCategory')}</div>
 				{#each Array.from({ length: slots }, (_, i) => picked[i]) as c, i (i)}
 					<div class="cell">
 						{#if c}
 							<strong>{trackById[c.track].label}</strong>
 							<span class="sub">{c.category}</span>
 							{#if c.task?.length}
-								<div class="chips">{#each c.task as t (t)}<span class="chip">{t}</span>{/each}</div>
+								<div class="chips">{#each c.task as task (task)}<span class="chip">{task}</span>{/each}</div>
 							{/if}
 						{/if}
 					</div>
 				{/each}
 
-				<div class="row-h">Difficulty</div>
+				<div class="row-h">{L('difficulty')}</div>
 				{#each Array.from({ length: slots }, (_, i) => picked[i]) as c, i (i)}
 					<div class="cell">
-						{#if c}<span class="diff diff-{c.difficulty.toLowerCase()}">{c.difficulty}</span>{/if}
+						{#if c}<span class="diff diff-{c.difficulty.toLowerCase()}">{t(`difficulty.${c.difficulty}` as UiKey)}</span
+							>{/if}
 					</div>
 				{/each}
 
-				<div class="row-h">Summary</div>
+				<div class="row-h">{L('summary')}</div>
 				{#each Array.from({ length: slots }, (_, i) => picked[i]) as c, i (i)}
 					<div class="cell">{#if c}{@render text(c.summary)}{/if}</div>
 				{/each}
 
-				<div class="row-h">When to use</div>
+				<div class="row-h">{L('whenToUse')}</div>
 				{#each Array.from({ length: slots }, (_, i) => picked[i]) as c, i (i)}
 					<div class="cell">{#if c}{@render text(c.whenToUse)}{/if}</div>
 				{/each}
 
-				<div class="row-h">When to avoid</div>
+				<div class="row-h">{L('whenToAvoid')}</div>
 				{#each Array.from({ length: slots }, (_, i) => picked[i]) as c, i (i)}
 					<div class="cell">{#if c}{@render text(c.whenToAvoid)}{/if}</div>
 				{/each}
 
 				{#if reqKeys.length}
-					<div class="row-h">Requirements</div>
+					<div class="row-h">{L('requirements')}</div>
 					{#each reqKeys as k (k)}
-						<div class="row-sub">{formatKey(k)}</div>
+						<div class="row-sub">{requirementLabel(k, i18n.current)}</div>
 						{#each Array.from({ length: slots }, (_, i) => picked[i]) as c, i (i)}
 							<div class="cell req">
 								{#if c}
 									{@const v = reqValue(c, k)}
-									<span class="req-v" class:yes={v === 'Yes'} class:na={v === '—'}>{v}</span>
+									<span class="req-v" class:yes={v === true} class:na={v === undefined}
+										>{v === undefined ? '—' : v === true ? t('common.yes') : v === false ? t('common.no') : v}</span
+									>
 								{/if}
 							</div>
 						{/each}
 					{/each}
 				{/if}
 
-				<div class="row-h">Hyperparameters</div>
+				<div class="row-h">{L('hyperparameters')}</div>
 				{#each Array.from({ length: slots }, (_, i) => picked[i]) as c, i (i)}
 					<div class="cell">
 						{#if c}
@@ -169,17 +282,17 @@
 								<div class="chips">
 									{#each c.parameters as p (p.name)}<code class="chip mono" title={p.impact}>{p.name}</code>{/each}
 								</div>
-							{:else}<span class="none">None</span>{/if}
+							{:else}<span class="none">{L('none')}</span>{/if}
 						{/if}
 					</div>
 				{/each}
 
-				<div class="row-h">Pros</div>
+				<div class="row-h">{L('pros')}</div>
 				{#each Array.from({ length: slots }, (_, i) => picked[i]) as c, i (i)}
 					<div class="cell">{#if c}{@render list(c.pros, 'pro')}{/if}</div>
 				{/each}
 
-				<div class="row-h">Cons</div>
+				<div class="row-h">{L('cons')}</div>
 				{#each Array.from({ length: slots }, (_, i) => picked[i]) as c, i (i)}
 					<div class="cell">{#if c}{@render list(c.cons, 'con')}{/if}</div>
 				{/each}
@@ -188,15 +301,15 @@
 	</div>
 
 	{#if ids.length === 2 && slots === 2}
-		<button class="btn add" onclick={() => (wantThird = true)}>＋ Add a third concept</button>
+		<button class="btn add" onclick={() => (wantThird = true)}><span aria-hidden="true">＋</span> {L('addThird')}</button>
 	{/if}
 
 	{#if picked.length < 2}
 		<section class="suggest">
-			<span class="eyebrow">Popular comparisons</span>
+			<span class="eyebrow">{L('popular')}</span>
 			<div class="pairs">
 				{#each pairs as [a, b] (a + b)}
-					<a class="btn btn-sm" href={compareHref(a, b)}>{name(a)} <span class="vs">vs</span> {name(b)}</a>
+					<a class="btn btn-sm" href={compareHref(a, b)}>{name(a)} <span class="vs">{L('vs')}</span> {name(b)}</a>
 				{/each}
 			</div>
 		</section>
@@ -220,8 +333,9 @@
 		margin: 16px 0 24px;
 	}
 	.scroller.scroll {
-		margin: 0 -20px;
-		padding: 0 20px 4px;
+		margin-inline: -20px;
+		padding-block: 0 4px;
+		padding-inline: 20px;
 		overflow-x: auto;
 	}
 	.cmp {
@@ -269,7 +383,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 2px;
-		margin-left: -8px;
+		margin-inline-start: -8px;
 	}
 	.slot-actions .btn {
 		color: var(--text-3);
@@ -300,6 +414,10 @@
 		font-weight: 600;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
+	}
+	/* Letter-spacing breaks Arabic joining. */
+	:global([dir='rtl']) .row-h {
+		letter-spacing: 0;
 		color: var(--text-3);
 	}
 	.row-sub {
@@ -386,11 +504,11 @@
 	}
 	.bullets li {
 		position: relative;
-		padding-left: 18px;
+		padding-inline-start: 18px;
 	}
 	.bullets li::before {
 		position: absolute;
-		left: 0;
+		inset-inline-start: 0;
 		font-weight: 700;
 	}
 	.bullets.pro li::before {

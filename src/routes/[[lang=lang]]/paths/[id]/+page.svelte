@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import { lhref, t } from '#lib/i18n/index.svelte.ts';
 	import { getConcepts, trackById } from '#lib/content.ts';
 	import { progress } from '#lib/progress.svelte.ts';
 	import { hasExplainer, isInteractive } from '#lib/explainers/registry.ts';
@@ -10,13 +10,13 @@
 	const steps = $derived(getConcepts(path.steps));
 	const done = $derived(progress.countIn(path.steps));
 	const nextIndex = $derived(steps.findIndex((c) => !progress.isLearned(c.id)));
-	const href = (id: string) => `${resolve('/concept/[id]', { id })}?path=${path.id}`;
+	const href = (id: string) => `${lhref(`/concept/${id}`)}?path=${path.id}`;
 </script>
 
-<svelte:head><title>{path.title} · ML Hub</title></svelte:head>
+<svelte:head><title>{path.title} · {t('site.name')}</title></svelte:head>
 
 <div class="container page">
-	<a class="back" href={resolve('/paths')}>← All paths</a>
+	<a class="back" href="{lhref('/roadmap')}?focus={path.id}">{t('common.arrowBack')} {t('path.backToRoadmap')}</a>
 	<header class="head">
 		<span class="icon" aria-hidden="true">{path.icon}</span>
 		<div>
@@ -27,13 +27,13 @@
 
 	<div class="summary card">
 		<div class="bar"><span style:width="{(done / steps.length) * 100}%"></span></div>
-		<span class="count"><strong>{done}</strong> of {steps.length} done</span>
+		<span class="count">{t('path.doneOf', { done, total: steps.length })}</span>
 		{#if nextIndex >= 0}
 			<a class="btn btn-primary" href={href(steps[nextIndex].id)}>
-				{done ? 'Continue' : 'Start'}: {steps[nextIndex].name} →
+				{done ? t('path.continueName', { name: steps[nextIndex].name }) : t('path.startName', { name: steps[nextIndex].name })} {t('common.arrowForward')}
 			</a>
 		{:else}
-			<span class="complete">✓ Path complete</span>
+			<span class="complete">{t('path.complete')}</span>
 		{/if}
 	</div>
 
@@ -46,19 +46,19 @@
 					<div class="step-top">
 						<h3>{c.name}</h3>
 						{#if hasExplainer(c.id)}
-							<span class="tag lesson">▶ Lesson</span>
+							<span class="tag lesson">▶ {t('common.lesson')}</span>
 						{:else if isInteractive(c.id)}
-							<span class="tag">Playground</span>
+							<span class="tag">{t('common.playground')}</span>
 						{/if}
 					</div>
 					<p>{c.summary}</p>
-					<span class="track">{trackById[c.track].label} · {c.difficulty}</span>
+					<span class="track">{trackById[c.track].label} · {t(`difficulty.${c.difficulty}`)}</span>
 				</a>
 				<button
 					class="tick"
 					class:on={learned}
 					onclick={() => progress.toggle(c.id)}
-					aria-label="{learned ? 'Unmark' : 'Mark'} {c.name} as learned"
+					aria-label={learned ? t('path.unmarkAria', { name: c.name }) : t('path.markAria', { name: c.name })}
 					aria-pressed={learned}>✓</button
 				>
 			</li>
@@ -137,7 +137,7 @@
 	.timeline::before {
 		content: '';
 		position: absolute;
-		left: 15px;
+		inset-inline-start: 15px;
 		top: 16px;
 		bottom: 16px;
 		width: 2px;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/index.svelte.ts';
 	import { browser } from '$app/env';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -48,29 +49,26 @@
 	const countFor = (id: TrackId | 'all') => (id === 'all' ? concepts.length : concepts.filter((c) => c.track === id).length);
 </script>
 
-<svelte:head><title>Learn · ML Hub</title></svelte:head>
+<svelte:head><title>{t('nav.learn')} · {t('site.name')}</title></svelte:head>
 
 <div class="container page">
 	<header class="head">
-		<h1>All concepts</h1>
-		<p class="muted">
-			{concepts.length} concepts across machine learning, deep learning, data engineering and MLOps. Each one has an
-			intuition, a diagram, the math, hyperparameters and code.
-		</p>
+		<h1>{t('learn.title')}</h1>
+		<p class="muted">{t('learn.lead', { n: concepts.length })}</p>
 	</header>
 
-	<div class="tabs" role="tablist" aria-label="Tracks">
-		{#each [{ id: 'all', label: 'All', color: 'var(--text-3)' }, ...tracks] as t (t.id)}
+	<div class="tabs" role="tablist" aria-label={t('learn.tracks')}>
+		{#each [{ id: 'all', label: t('learn.all'), color: 'var(--text-3)' }, ...tracks] as tr (tr.id)}
 			<button
 				role="tab"
-				aria-selected={track === t.id}
-				class:active={track === t.id}
-				style:--tc={t.color}
-				onclick={() => setTrack(t.id as TrackId | 'all')}
+				aria-selected={track === tr.id}
+				class:active={track === tr.id}
+				style:--tc={tr.color}
+				onclick={() => setTrack(tr.id as TrackId | 'all')}
 			>
-				{#if t.id !== 'all'}<span class="dot"></span>{/if}
-				{t.label}
-				<span class="n">{countFor(t.id as TrackId | 'all')}</span>
+				{#if tr.id !== 'all'}<span class="dot"></span>{/if}
+				{tr.label}
+				<span class="n">{countFor(tr.id as TrackId | 'all')}</span>
 			</button>
 		{/each}
 	</div>
@@ -85,16 +83,16 @@
 					stroke-linecap="round"
 				/></svg
 			>
-			<input bind:value={query} placeholder="Filter by name, topic or parameter…" aria-label="Filter concepts" />
+			<input bind:value={query} placeholder={t('learn.filter')} aria-label={t('learn.filterLabel')} />
 		</label>
-		<select bind:value={difficulty} aria-label="Difficulty">
-			<option value="all">Any level</option>
-			<option>Beginner</option>
-			<option>Intermediate</option>
-			<option>Advanced</option>
+		<select bind:value={difficulty} aria-label={t('learn.difficulty')}>
+			<option value="all">{t('learn.anyLevel')}</option>
+			<option value="Beginner">{t('difficulty.Beginner')}</option>
+			<option value="Intermediate">{t('difficulty.Intermediate')}</option>
+			<option value="Advanced">{t('difficulty.Advanced')}</option>
 		</select>
-		<label class="toggle"><input type="checkbox" bind:checked={interactiveOnly} /> Interactive</label>
-		<label class="toggle"><input type="checkbox" bind:checked={hideLearned} /> Hide learned</label>
+		<label class="toggle"><input type="checkbox" bind:checked={interactiveOnly} /> {t('learn.interactiveOnly')}</label>
+		<label class="toggle"><input type="checkbox" bind:checked={hideLearned} /> {t('learn.hideLearned')}</label>
 	</div>
 
 	{#each groups as g (g.track?.id ?? 'flat')}
@@ -102,7 +100,7 @@
 			{#if g.track}
 				<h2 style:--tc={g.track.color}>
 					<span class="dot"></span>{g.track.label}
-					<span class="progress">{progress.countIn(g.items.map((c) => c.id))}/{g.items.length} learned</span>
+					<span class="progress">{t('learn.groupLearned', { done: progress.countIn(g.items.map((c) => c.id)), total: g.items.length })}</span>
 				</h2>
 			{/if}
 			<div class="grid">
@@ -113,7 +111,7 @@
 		</section>
 	{:else}
 		<div class="empty card">
-			<p>No concepts match these filters.</p>
+			<p>{t('learn.noMatch')}</p>
 			<button
 				class="btn btn-sm"
 				onclick={() => {
@@ -122,7 +120,7 @@
 					interactiveOnly = false;
 					hideLearned = false;
 					setTrack('all');
-				}}>Clear filters</button
+				}}>{t('common.clearFilters')}</button
 			>
 		</div>
 	{/each}
@@ -254,7 +252,7 @@
 		font-size: 1.125rem;
 	}
 	.progress {
-		margin-left: auto;
+		margin-inline-start: auto;
 		font-size: 0.8125rem;
 		font-weight: 500;
 		color: var(--text-3);

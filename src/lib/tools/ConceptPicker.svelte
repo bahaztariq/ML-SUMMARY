@@ -4,6 +4,15 @@
 <script lang="ts">
 	import { trackById } from '#lib/content.ts';
 	import { search } from '#lib/search.ts';
+	import { local } from '#lib/i18n/index.svelte.ts';
+
+	// English is the source; its keys type the other languages.
+	const en = { placeholder: 'Search a concept…', label: 'Search a concept', none: 'No matching concepts' };
+	const L = local({
+		en,
+		fr: { placeholder: 'Rechercher un concept…', label: 'Rechercher un concept', none: 'Aucun concept correspondant' },
+		ar: { placeholder: 'ابحث عن مفهوم…', label: 'ابحث عن مفهوم', none: 'لا توجد مفاهيم مطابقة' }
+	});
 
 	interface Props {
 		exclude?: string[];
@@ -11,7 +20,7 @@
 		label?: string;
 		onpick: (id: string) => void;
 	}
-	let { exclude = [], placeholder = 'Search a concept…', label = 'Search a concept', onpick }: Props = $props();
+	let { exclude = [], placeholder, label, onpick }: Props = $props();
 
 	const uid = $props.id();
 	let query = $state('');
@@ -60,8 +69,8 @@
 		>
 		<input
 			bind:value={query}
-			{placeholder}
-			aria-label={label}
+			placeholder={placeholder ?? L('placeholder')}
+			aria-label={label ?? L('label')}
 			role="combobox"
 			aria-expanded={open && results.length > 0}
 			aria-controls="{uid}-list"
@@ -98,7 +107,7 @@
 					<span class="cat">{c.category}</span>
 				</li>
 			{:else}
-				<li class="none">No matching concepts</li>
+				<li class="none">{L('none')}</li>
 			{/each}
 		</ul>
 	{/if}
@@ -138,8 +147,8 @@
 		position: absolute;
 		z-index: 20;
 		top: calc(100% + 4px);
-		left: 0;
-		right: 0;
+		inset-inline-start: 0;
+		inset-inline-end: 0;
 		margin: 0;
 		padding: 4px;
 		list-style: none;

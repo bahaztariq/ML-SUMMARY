@@ -6,6 +6,7 @@
 import { conceptById, concepts, mermaidLabel, tracks } from '#lib/content.ts';
 import { taxonomy as rawTaxonomy } from '#content/taxonomy.js';
 import { pipelines as rawPipelines } from '#content/pipelines.js';
+import { i18n, type Lang } from '#lib/i18n/index.svelte.ts';
 import type { ConceptMeta, Track, TrackId } from '#lib/types.ts';
 
 export interface TaxonomyGroup {
@@ -32,13 +33,53 @@ export interface Graph {
 export const taxonomy = rawTaxonomy as TaxonomyGroup;
 export const pipelines = rawPipelines as Pipeline[];
 
+/* ------------------------------------------------ translations: content/i18n/<lang>/… */
+
+type PipelineText = Partial<Pick<Pipeline, 'title' | 'description' | 'source'>>;
+const taxonomyTexts = import.meta.glob<Record<string, string>>('/content/i18n/*/taxonomy.js', { eager: true, import: 'default' });
+const pipelineTexts = import.meta.glob<Record<string, PipelineText>>('/content/i18n/*/pipelines.js', {
+	eager: true,
+	import: 'default'
+});
+
+/** A taxonomy grouping label in the given language (English when untranslated). */
+export function taxonomyLabel(label: string, lang: Lang = i18n.current): string {
+	return (lang === 'en' ? undefined : taxonomyTexts[`/content/i18n/${lang}/taxonomy.js`]?.[label]) ?? label;
+}
+
+/** A Mermaid source with every quoted label emptied: what must not change in a translation (ids, arrows, links). */
+export function mermaidSkeleton(source: string): string {
+	return source
+		.replace(/"[^"]*"/g, '""')
+		.replace(/[ \t]+/g, ' ')
+		.trim();
+}
+
+/** A pipeline with its title, description and diagram in the given language. */
+export function localizePipeline(p: Pipeline, lang: Lang = i18n.current): Pipeline {
+	const tr = lang === 'en' ? undefined : pipelineTexts[`/content/i18n/${lang}/pipelines.js`]?.[p.id];
+	if (!tr) return p;
+	// A translated diagram must declare the same nodes, or its concept links would break.
+	const sameNodes = !!tr.source && mermaidSkeleton(tr.source) === mermaidSkeleton(p.source);
+	return {
+		...p,
+		title: tr.title ?? p.title,
+		description: tr.description ?? p.description,
+		source: sameNodes ? tr.source! : p.source
+	};
+}
+
 /** Stable Mermaid node id for a concept. */
 export const nodeKey = (id: string) => 'c_' + id.replace(/[^a-zA-Z0-9]/g, '_');
 
 const learnedMark = (learned: boolean) => (learned ? ' ✓' : '');
 
 /** AI → ML → families → models. Grouping nodes are stadium-shaped; concepts are boxes. */
-export function taxonomyGraph(root: TaxonomyGroup = taxonomy, isLearned: (id: string) => boolean = () => false): Graph {
+export function taxonomyGraph(
+	root: TaxonomyGroup = taxonomy,
+	isLearned: (id: string) => boolean = () => false,
+	labelOf: (label: string) => string = taxonomyLabel
+): Graph {
 	// ~45 leaves stacked vertically: tighten sibling spacing and let labels run wider so it stays compact.
 	const lines = [`%%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 56, "wrappingWidth": 280}}}%%`, 'flowchart LR'];
 	const edges: string[] = [];
@@ -60,7 +101,7 @@ export function taxonomyGraph(root: TaxonomyGroup = taxonomy, isLearned: (id: st
 			return key;
 		}
 		const key = `g${counter++}`;
-		lines.push(`  ${key}(["${mermaidLabel(node.label)}"])`);
+		lines.push(`  ${key}(["${mermaidLabel(labelOf(node.label))}"])`);
 		groups.push(key);
 		if (node.concept && conceptById.has(node.concept)) links[key] = node.concept;
 		for (const child of node.children ?? []) {
