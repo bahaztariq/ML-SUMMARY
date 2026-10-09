@@ -14,7 +14,8 @@ export default defineConfig({
 			},
 			adapter: adapter({ fallback: '404.html' }),
 			// GitHub Pages serves the site from /<repo>; the deploy workflow sets BASE_PATH.
-			paths: { base: (process.env.BASE_PATH ?? '') as '' | `/${string}` }
+			// Absolute paths, so the i18n helpers can strip and re-add the base reliably while prerendering.
+			paths: { base: (process.env.BASE_PATH ?? '') as '' | `/${string}`, relative: false }
 		})
 	],
 	test: {
